@@ -1,0 +1,12 @@
+import unittest
+
+import agentic_kv
+
+
+class PackageSmokeTest(unittest.TestCase):
+    def test_package_has_version(self) -> None:
+        self.assertEqual(agentic_kv.__version__, "0.0.0")
+
+
+if __name__ == "__main__":
+    unittest.main()

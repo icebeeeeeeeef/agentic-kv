@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Experiment outputs
+experiments/runs/
+results/*
+!results/.gitkeep
+data/
+*.log
+
+# User-provided, non-public source material
+docs/research/source-material/private/*
+!docs/research/source-material/private/README.md

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "claim_state": "ROADMAP",
+  "repo_commit": null,
+  "sglang_commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
+  "mooncake_commit": null,
+  "model": null,
+  "tokenizer": null,
+  "workload": {
+    "name": null,
+    "seed": 0,
+    "cohort": "calibration"
+  },
+  "topology": {
+    "gpu_workers": 2,
+    "storage_nodes": 1,
+    "transport": "tcp"
+  },
+  "cache": {
+    "page_size": null,
+    "l1_bytes": null,
+    "l2_bytes": null,
+    "l3_bytes": null
+  },
+  "policy": {
+    "name": "ADMIT_ALL",
+    "parameters": {},
+    "parameter_source": "fixed"
+  },
+  "run": {
+    "order": null,
+    "repeat": 0,
+    "reset_method": null
+  }
+}
