@@ -1,7 +1,13 @@
-# Implementation evidence
+# Implementation evidence and G0 execution materials
 
-This directory is intentionally empty at repository initialization.
+Documents in this directory must distinguish pinned-source facts, implementation plans,
+open decisions, and runtime artifacts. None of them may upgrade claim state by themselves.
 
-Add documents only when backed by current source or runtime evidence. The first expected artifact is a G0 source/runtime audit that pins both SGLang and Mooncake and proves the exact behavior-changing seam before policy implementation.
+- [G0 source/runtime audit](G0_SOURCE_RUNTIME_AUDIT.md): pinned upstream source facts,
+  observation limits, and the precise behavior seam.
+- [G0 execution plan](G0_EXECUTION_PLAN.md): delegated runtime procedure and acceptance matrix.
+- [G0 decision discussion list](G0_DISCUSSION_LIST.md): dependency-ordered unresolved
+  decisions to settle before implementation; it is not runtime evidence.
 
-Do not copy planning statements here as if they were completed work.
+Do not copy planning statements here as if they were completed work. Runtime validation
+requires retained artifacts and the corresponding Gate, not a source audit or `make check`.

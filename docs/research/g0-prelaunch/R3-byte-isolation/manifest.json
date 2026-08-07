@@ -1,0 +1,9 @@
+{
+  "package": "R3",
+  "outcome": "STOP",
+  "date": "2026-08-06",
+  "sglang_sha": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
+  "mooncake_sha": "6041a609a8c3af35e778f70db344f145c2914980",
+  "runtime_artifacts": "absent",
+  "blocked_next_step": "stop new-payload claim or obtain authorized pre-collapse Mooncake observation"
+}

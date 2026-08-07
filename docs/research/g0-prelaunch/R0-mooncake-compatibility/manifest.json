@@ -1,0 +1,12 @@
+{
+  "package": "R0",
+  "outcome": "INCONCLUSIVE",
+  "date": "2026-08-06",
+  "sglang_sha": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
+  "mooncake_tag": "v0.3.12.post1",
+  "mooncake_sha": "6041a609a8c3af35e778f70db344f145c2914980",
+  "distribution": "mooncake-transfer-engine==0.3.12.post1",
+  "wheel_sha256": "8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439",
+  "runtime_artifacts": "absent; target Linux GPU probe not run",
+  "blocked_next_step": "pinned adapter initialization and Put/Get probe"
+}

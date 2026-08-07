@@ -19,6 +19,8 @@
 2. STATUS.md：当前实际完成状态和下一步
 3. docs/README.md：研究材料的权威层级与阅读顺序
 4. AGENTS.md：在本仓库工作的行为约束
+5. TASKS.md：仅记录用户明确授权的近期任务
+6. docs/project/INTERVIEW_QA.md：由当前证据派生的面试防守集合
 
 若研究评审材料与 PROJECT_PLAN.md 冲突，以 PROJECT_PLAN.md 为准；若 PROJECT_PLAN.md 描述计划、STATUS.md 描述实际进度，以 STATUS.md 的完成状态为准。
 
@@ -39,6 +41,7 @@
     tests/                    快速、确定性的本地测试
     experiments/              manifest 规范；运行结果不直接入 Git
     results/                  仅保留目录，原始输出默认忽略
+    TASKS.md                  用户控制的短期任务清单
 
 ## 本地检查
 

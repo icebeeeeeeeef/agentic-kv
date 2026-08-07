@@ -4,6 +4,7 @@
 
 - JOB_MARKET_FIT.md：岗位与团队匹配调查
 - PROJECT_SELECTION_REVIEW.md：候选方向对抗式选择记录
+- G0_PRELAUNCH_RESEARCH_RESULTS.md：G0 固定源码调查、逐包结论与 runtime blockers
 
 ## Evidence ledgers
 
