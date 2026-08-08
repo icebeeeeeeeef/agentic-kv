@@ -1,14 +1,13 @@
-# G0 决策讨论列表
+# G0 讨论留档与未决实现问题
 
-> 状态：**DISCUSSION DRAFT**（不是实现计划、源码事实或 runtime 证据）
-> 当前总裁决：**G0-SOURCE BLOCKED**
-> 目的：在启动 G0 前，逐项收敛会改变 G0 合同、最小 patch、运行时验收或 STOP 处理的决策。
-> 讨论方式：严格按本文顺序一次只解决一题；每题结论必须写明采用项、拒绝项、理由和对后续题目的影响。
+> 状态：**HISTORICAL DISCUSSION / NON-AUTHORITY**（不是实现计划、源码事实或 runtime 证据）
+> 当前总裁决与下一动作：以 [STATUS.md](../../STATUS.md) 为准。
+> 路由：已由 owner 确认、会约束实现或 claim 的决议写入
+> [DECISIONS.md](../project/DECISIONS.md)；本文件只保留其讨论缘由，以及尚须由 source/runtime artifact 回答的实现问题。
 
-本清单使用 `grill-me` 的原则：能由 pinned source 或既有 canonical contract 回答的，
-不假装成用户选择；真正的分歧才进入讨论。项目宪法仍是
+不要在本文重新选择 D1/D9/D10，也不要在此追加新的“决议”。项目宪法仍是
 [PROJECT_PLAN.md](../project/PROJECT_PLAN.md)，实际完成状态仍是
-[STATUS.md](../../STATUS.md)。本文不能单独升级 claim state，也不能绕过其中的 STOP。
+[STATUS.md](../../STATUS.md)。本文不能单独升级 claim state、改变 Gate/STOP 或授权实现。
 
 ## 已经固定，不重新选择
 
@@ -21,13 +20,19 @@
 | G0 不做的工作 | `VALUE_DENSITY`、L1/L2 或 L3 eviction、router、RDMA/GDR/NIXL、第二 backend、模拟器 | 这些不是解决当前 blocker 的简单办法。 |
 | hook 的失败语义 | policy 异常必须 fail-open 回到 upstream write path | 这是 G0 正确性合同，不是可选“高可用功能”。 |
 
-## 讨论顺序与决策树
+## 已决项路由（不重新讨论）
+
+| 原讨论号 | 当前状态 | 唯一决议入口 |
+|---|---|---|
+| D1 / D2 | 已决：保留 `new_physical_put_bytes`，授权严格 trace-only pre-collapse observation | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) |
+| D9 | 已决：complete prefix group all-or-none | [D9](../project/DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none) |
+| D10 | 已决：failure/async 合同严格，failure injector 不可得为 `INCONCLUSIVE` | [D10](../project/DECISIONS.md#d10--failureasync-合同保持严格不伪造覆盖) |
+
+## 历史依赖图（仅解释先后，不授权实现）
 
 ```text
-D1 payload/race 观测合同
- ├─ 保留 new-Put bytes → D2 Mooncake trace-only patch 授权 → D8/D10
- ├─ 删除该 claim       → canonical plan 改写 → 不能按原口径宣称 G0-RUNTIME VALIDATED
- └─ 不接受任一路径     → G0 停止
+D1/D2 payload/race 观测合同（已决）
+ └─ Mooncake trace-only patch + non-interference artifact → D8/D10
 
 D3 目标 Linux/GPU 组合 → D4 stock A→B restore → D5 拓扑与隔离
                                                      ↓
@@ -38,43 +43,13 @@ D3 目标 Linux/GPU 组合 → D4 stock A→B restore → D5 拓扑与隔离
                                       D10 cleanup/failure → D11 G0 exit ruling
 ```
 
-`D1` 和 `D3` 可以在事实收集上并行，但不能跳过 `D1` 后就声称 payload 结果；
-`D6`–`D10` 只有 `D3`–`D5` 的 stock runtime 证据通过后才能实施。
+当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：stock restore → D1 observation →
+SGLang trace-only → behavior hook。`D6`–`D10` 只有 stock runtime prerequisite 通过后才能实施。
 
-## 待讨论项
+## 尚待 artifact 回答的实现问题
 
-### D1 — 是否保留“新完成 Put payload bytes”这一 G0 验收目标？
-
-**需要裁决的事实：**当前 Mooncake contract 将 `OBJECT_ALREADY_EXISTS` 与新的 Put 都归约为
-Python success `0`。所以 `precheck-miss + put=0` 不能证明“此 writer 产生了新物理写入”。
-
-**可选项：**
-
-1. 授权只读、trace-only 的 Mooncake 观测，在 duplicate-to-success 归约**之前**保留原因码；
-2. 修改 canonical plan，停止 `completed_new_put_bytes`、dedup/race 新写归因与 payload-efficiency
-   claim；
-3. 不接受上述两项，停止 G0。
-
-**推荐：选项 1。**它不改变 Put、Get、去重、重试、队列或存储行为，只补回被上游 API
-抹平的事实。选项 2 会使原 G0 的 payload-byte 通过条件失效，不能悄悄将模糊的成功字节改名。
-
-**通过后解锁：**D2、D10、`BYTE_RECONCILE` 与原 G0 exit contract。
-**拒绝 / 停止条件：**没有选项 1 的授权时，不得实施 Mooncake patch；若同时不改 canonical plan，
-G0 保持 `G0-SOURCE BLOCKED`。
-
-### D2 — 若保留该指标，允许的 Mooncake trace-only patch 精确边界是什么？
-
-**问题：**如何让 trace 在归约前区分 `new_put`、`already_exists_race`、`exists_skip`、
-`put_failure`，且不改变原有 return code？
-
-**推荐：**只在 pinned Mooncake checkout 的 duplicate-to-success 归约点之前，向一个独立的
-append-only trace sink 发出 opaque `attempt_id` + physical-object key hash + 原始原因码。不得改
-API return、object key、lock、retry、batch 顺序、网络协议或 Store 状态；SGLang trace 与此 patch
-分 commit、分测试。若无法在不改变行为的前提下取得原因码，应停止 payload 分支，而不是扩展 backend。
-
-**依赖：**D1 选项 1。
-**通过后解锁：**D10 的 race/dedup/bytes 分类。
-**需要留下的反证：**trace-disabled 与 trace-enabled 的物理 Put/Get 结果和输出相同。
+下列条目不是新的 owner 决策；它们的 Pass/Fail/Inconclusive 必须由对应 G0 artifact 回答。实现边界、
+测试与 STOP 以 [G0 execution plan](G0_EXECUTION_PLAN.md) 和 source audit 为准。
 
 ### D3 — G0 的目标 Linux GPU 组合和不可替代的版本身份是什么？
 
@@ -115,11 +90,12 @@ segment、epoch/对象状态证据。
 
 ### D6 — trace context 的最小数据模型和所有权是什么？
 
-**问题：**如何实现 `decision_id → StorageOperation → batch/attempt → adapter result`，又不引入
+**问题：**如何实现 `observation_id → StorageOperation → batch/attempt → adapter result`，又不引入
 第二套异步生命周期？
 
-**推荐：**向 `StorageOperation` 显式传递一个小型不可变 `TraceContext`（`run_id`、
-`decision_id`、`operation_id`）；controller 以每 operation 的 batch ordinal 派生 `attempt_id`。
+**当前合同：**向 `StorageOperation` 显式传递一个小型不可变 `TraceContext`（`run_id`、
+`observation_id`、`operation_id`）；controller 以每 operation 的 batch ordinal 派生 `attempt_id`。只有
+后续 behavior patch 才可在同一 record 追加 `decision_id`。
 不要用全局 side map：它会复制 operation 生命周期、引入清理泄漏和时间关联猜测。ID 仅用于日志 join，
 不进入 key construction、policy 输入、queue ordering、retry、dedup 或 read path。
 
@@ -152,31 +128,17 @@ write path 并记录 reason code。
 **通过后解锁：**D9、D10。
 **停止条件：**hook 在 L2 ack 前、`StorageOperation` 创建后，或任何 trace 字段参与决策。
 
-### D9 — prefix-closure 的 decision group 是 all-or-none 还是允许首个 DROP 后强制 suffix DROP？
+### D9 — prefix-closure group 的 runtime oracle
 
-**问题：**如何确保 first-miss lookup 下不会写入不可达的远端 suffix？
+此项已由 [D9](../project/DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none) 决定为 complete
+group all-or-none。剩余问题只是在 runtime artifact 中证明 anchor/order 可观测、partial input 被拒绝，
+而不是重新选择 suffix 规则或增加 remote metadata/read path。
 
-**推荐：**G0 采用更简单的 **root/known-resident anchor + ordered logical pages 的 group all-or-none**。
-它天然满足闭包，便于 `ALWAYS_*` oracle 和 trace。将来只有确有按页选择需求且有独立单测时，才讨论
-“首个 DROP 后强制所有 suffix DROP”；G0 不需要它。
+### D10 — failure/async 的 runtime oracle
 
-**依赖：**D8。
-**通过后解锁：**`PREFIX_CLOSURE` runtime case。
-**停止条件：**靠新 remote metadata、目录 RPC 或 read-path repair 修补 hole。
-
-### D10 — dedup/race/failure 与异步清理的最低验收边界是什么？
-
-**问题：**真实 runtime 必须覆盖哪些终态；没有官方 failure injector 时能否把“未测”写成通过？
-
-**推荐：**必须分别保留 sequential dedup、two-writer overlap、正常成功、policy exception fail-open、
-shutdown/detach 的 terminal；每个 admitted path drain 后 `backup_queue`、`ack_backup_queue`、
-`ongoing_backup` 和 host protection 回到基线。没有官方、非侵入式 failure injector 时，failure
-coverage 只能是 `INCONCLUSIVE`，不能伪造或以进程退出掩盖；若 canonical G0 仍要求该项 PASS，则 G0
-不能报告 runtime validated。D1 选项 1 后，race 还必须按 pre-collapse 原因码对账。
-
-**依赖：**D1/D2（针对 race bytes）、D8。
-**通过后解锁：**G0 matrix 的清理与失败分支结论。
-**停止条件：**通过 mock backend、聚合字节或进程退出声称 runtime failure lifecycle 已覆盖。
+此项已由 [D10](../project/DECISIONS.md#d10--failureasync-合同保持严格不伪造覆盖) 决定。剩余问题只是在
+G0 matrix 中取得 success/dedup/race/fail-open/shutdown-detach terminal artifact，并如实把不可注入的
+failure 标为 `INCONCLUSIVE`；不得在此重新讨论 mock、process-exit 或新 cancellation owner。
 
 ### D11 — G0 的最终通过声明究竟要求哪些 retained artifacts？
 
@@ -185,33 +147,18 @@ coverage 只能是 `INCONCLUSIVE`，不能伪造或以进程退出掩盖；若 c
 **推荐：**保留原严格定义：每个 required scenario 有 immutable run bundle，含 source/build hashes、
 A/B/C 配置和日志、health/segment 前后响应、trace JSONL、output hashes、drain snapshots、
 manifest、checksums 和 `PASS/FAIL/INCONCLUSIVE/STOP` 结果。`make check` 仅是仓库检查，不能替代
-runtime artifact。D1 若选择取消 payload metric，必须先改 canonical plan 后才能重新定义一个较窄的
-G0 functional gate；在此之前不能使用原 `G0-RUNTIME VALIDATED` 结论。
+runtime artifact。D1 已保留 payload metric；若其 trace-only observation 不能通过 non-interference，必须按
+[D1 翻案条件](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 停止该 payload
+分支并修改 canonical plan，不能使用原 `G0-RUNTIME VALIDATED` 结论。
 
 **依赖：**D1–D10。
 **通过后解锁：**G0 的诚实状态升级，或保留可复核的 STOP/负结果。
 
-## 每题的结论记录模板
+## 使用规则
 
-讨论完一题后在该题下追加：
-
-```markdown
-### 决议（YYYY-MM-DD）
-
-- 采用：
-- 拒绝：
-- 理由与反例：
-- 需要修改的 canonical / implementation 文档：
-- 解锁的下一题：
-- 不改变的 scope：
-```
-
-没有这六项，讨论只能算观点交换，不能作为 implementation authority。
-
-## 下一题
-
-**D1：你是否授权一个严格 trace-only、pre-collapse 的 Mooncake observation patch，以保留
-`new_put` / `race_existing` 的区分并维持原 G0 payload-byte 合同？**
-
-推荐授权，但前提是它只记录原因码与 opaque correlation，完全不改变 Put/Get 结果、对象 key、
-队列、重试、传输和 Store 状态。若不授权，下一步不是写 hook，而是修改 canonical plan 或停止 G0。
+- 新的 owner-confirmed constraint 只能在用户确认后写入 [DECISIONS.md](../project/DECISIONS.md)，并同步
+  canonical plan/status；不要在本文件追加“决议”。
+- source/runtime finding 应进入 [source audit](G0_SOURCE_RUNTIME_AUDIT.md) 或 retained run artifact；它不能
+  自动改变 owner decision。
+- 当前可执行下一步由 [TASKS.md](../../TASKS.md) 与 [STATUS.md](../../STATUS.md) 给出；本文件不再提供
+  “下一题”。

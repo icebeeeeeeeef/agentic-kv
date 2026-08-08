@@ -52,13 +52,15 @@ Two distinct source facts matter:
 - Write-through L2 itself skips a child until the parent is L2-backed, enforcing an L2 root-contiguous backup prefix. [hiradix_cache.py#L840-L847](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/hiradix_cache.py#L840-L847)
 - Remote lookup queries pages in order and breaks at the first batch that is not fully present. [cache_controller.py#L1023-L1045](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/managers/cache_controller.py#L1023-L1045) The Mooncake adapter applies the backend/model key prefix and returns the number of continuous fully present logical pages, stopping on the first missing physical component. [mooncake_store.py#L1240-L1267](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py#L1240-L1267)
 
-**Inference, to be tested:** a policy must decide a root-anchored continuous group all-or-none, or force every suffix after its first `DROP` to `DROP`. The source proves first-miss lookup but does not provide an L3 admission policy or a proof that a new policy never creates a hole.
+**Inference, to be tested:** the source proves first-miss lookup but does not provide an L3 admission policy or a proof that a new policy never creates a hole. Per the accepted [D9 decision](../project/DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none), G0 takes the smaller option: a root-anchored continuous group is all-or-none. It does not implement a first-DROP suffix rule.
 
 ## Async cleanup facts
 
 On a backup acknowledgement, the scheduler removes the `ongoing_backup` entry and releases the node's host protection. [hiradix_cache.py#L660-L669](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/hiradix_cache.py#L660-L669) Detach/shutdown has a separate force-release pass for left-over backup entries. [hiradix_cache.py#L516-L573](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/hiradix_cache.py#L516-L573)
 
 This supports a strict runtime oracle: `DROP` creates none of these states; each admitted completed/failed/shutdown operation eventually leaves no queue entry, `ongoing_backup` entry, or host protection. It does **not** prove that every backend partial/failure situation is represented separately: `_page_backup` currently breaks on a failed controller batch and the comment explicitly says partial success is not yet implemented. [cache_controller.py#L1194-L1202](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/managers/cache_controller.py#L1194-L1202)
+
+**Owned-boundary decision (not an upstream absence claim):** G0 adds its decision before `StorageOperation` exists, so a DROP owns no async state. It will test upstream success/dedup/fail-open/shutdown-detach cleanup, but it will not add request-cancellation, epoch, or a second stale-completion owner. A late ack, leak, or residual protection observed after detach is a G0 failure, not a reason to hide the issue behind a new state machine. See [D10](../project/DECISIONS.md#d10--failureasync-合同保持严格不伪造覆盖).
 
 ## Mooncake adapter and observation seam
 
@@ -75,10 +77,11 @@ new Put or a competing writer's already-existing object. The adapter's per-objec
 can distinguish an **exists-skip** (precheck=1) and a negative failure, but cannot recover
 that race cause after the Mooncake boundary. Under the current observation contract this is
 `R2 state classification = FAIL` and `R2/R3 new-payload attribution = STOP`; do not call
-the sum of `put_result=0` `buffer_sizes` `completed_new_put_bytes`. Removing that STOP
-requires a canonical-metric change or explicit user authorization for an independent,
-pre-collapse Mooncake trace-only observation patch. This does not invalidate restore or the
-L3 admission seam.
+the sum of `put_result=0` `buffer_sizes` `completed_new_put_bytes`. The project owner has
+accepted [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch): an independent,
+pre-collapse Mooncake trace-only observation patch is authorized, but not yet implemented or
+validated. Until its non-interference proof exists, the STOP remains. This does not invalidate
+restore or the L3 admission seam.
 
 The minimum **trace-only** propagation is:
 
@@ -93,7 +96,12 @@ decision_id + run_id
 
 ## Minimum integration layout
 
-**Selected:** external pinned SGLang and Mooncake checkouts, each patched by a small ordered patch series held outside this repository; this repository owns manifests, workload, collector, tests, and evidence only.
+**Selected:** external pinned SGLang and Mooncake checkouts, with each small ordered patch
+series exported into this repository's [patch provenance directory](../../patches/README.md).
+The repository does not vendor either upstream: it owns the manifest, `git format-patch`
+artifacts once materialized, workload, collector, tests, and evidence. The currently declared
+series are `PLANNED`; no patch may be described as existing or applicable until its entry carries
+the exported files, hashes, focused-test result, and fresh-worktree apply verification.
 
 | Choice | Decision | Reason |
 |---|---|---|
@@ -101,7 +109,7 @@ decision_id + run_id
 | Git submodules now | Rejected | A submodule records a revision but does not establish build/API compatibility; it adds repository coupling before the G0 probe. |
 | One generic policy plugin framework | Rejected | The only current need is one fail-open binary seam and two forced actions. |
 | Combined policy + trace patch | Rejected | It cannot distinguish behavior regression from observability regression. |
-| External checkout + trace patch, then hook patch | Selected | Preserves upstream ownership and provides a reversible, reviewable proof surface. |
+| External checkout + repository-held trace patch, then hook patch | Selected | Preserves upstream ownership and provides a reversible, reviewable proof surface. |
 
 ## Runtime configuration facts
 

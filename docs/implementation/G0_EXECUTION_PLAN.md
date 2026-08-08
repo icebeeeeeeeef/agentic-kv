@@ -1,12 +1,16 @@
 # G0 Runtime Closure Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `subagent-driven-development` (recommended) or `executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** turn the SOURCE_VERIFIED SGLang seam into a minimal, auditable two-worker runtime proof, or stop with retained failure artifacts.
 
-**Architecture:** use two independently cold GPU SGLang workers and one external Mooncake Store. Keep L1/L2 write-through upstream; add one fail-open decision just before `write_storage`, then separately add opaque trace correlation from decision through adapter results. The external store is the only L3 memory contributor and uses TCP.
+**Architecture:** use two independently cold GPU SGLang workers and one external Mooncake Store. Keep L1/L2 write-through upstream. First add and prove inert the Mooncake D1 observation plus SGLang opaque trace correlation; only then add one fail-open decision just before `write_storage`. The external store is the only L3 memory contributor and uses TCP.
 
 **Tech Stack:** SGLang `b058dc910619c9d4bce9e9e24117104ffc491fa6`; Mooncake release candidate `v0.3.12.post1` (`6041a60` release commit prefix); Python; CUDA GPU workers; Mooncake TCP Store; JSONL artifacts.
+
+**Current executor note (2026-08-08):** the local macOS/arm64 preflight stopped before any
+upstream process started; see [T5 local preflight STOP](G0_T5_LOCAL_PREFLIGHT_STOP.md). This
+does not decide target-Linux compatibility, but it blocks T6/T7 on that executor. A future
+Linux CUDA run must re-execute every precondition below rather than treating this record as a
+partial deployment.
 
 ---
 
@@ -22,7 +26,7 @@
 | Cache | HiRadixCache is asserted from startup output; Unified Radix Tree disabled; one fixed page size and L1/L2 capacities | Any fallback cache implementation or a per-arm L1/L2 configuration change. |
 | L3 | C is the only non-zero `global_segment_size`; A/B each use `0`; C's bounded segment is observable via the Mooncake health/segment endpoint | The workers contribute memory or C has zero/no segment. |
 | Transport | `MOONCAKE_PROTOCOL=tcp`, blank device, no RDMA/GDR/NIXL flags | Do not broaden G0 to another data path. |
-| New-Put payload attribution | The current adapter terminal cannot distinguish a race `OBJECT_ALREADY_EXISTS` from a newly completed Put. | STOP `BYTE_RECONCILE` / payload-efficiency claim unless the canonical contract is changed or the user explicitly authorizes a separate pre-collapse Mooncake trace-only observation. |
+| New-Put payload attribution | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) authorizes a separate pre-collapse Mooncake trace-only observation. | Do not run `BYTE_RECONCILE` or make payload-efficiency claims until that patch and its trace-disabled/trace-enabled non-interference oracle pass. |
 
 ### Topology and canonical per-run configuration
 
@@ -72,13 +76,21 @@ Pass: exact SGLang SHA, tag-resolved Mooncake full SHA beginning `6041a60`, vers
 
 ## File and patch boundaries
 
-| Patch | Owned files in external SGLang checkout | Tests | Commit boundary |
+Before any upstream change, use the repository-owned [patch provenance manifest](../../patches/manifest.json)
+and its [materialization contract](../../patches/README.md). Its three entries are currently
+`PLANNED`: they pin source and execution order only. The implementation task that creates a
+real upstream change must export an ordered `git format-patch` series, record file hashes,
+and prove fresh-worktree `git am` application before it can call the series `MATERIALIZED`.
+This plan does not treat an empty declared directory as an applied patch.
+
+| Patch | Owned location | Tests | Commit boundary |
 |---|---|---|---|
+| Mooncake observation only | pinned Mooncake checkout, at the `OBJECT_ALREADY_EXISTS -> success` reduction boundary; exact file/line pinned when implemented | focused cause-record and trace-disabled equivalence test | `trace: expose pre-collapse object Put terminal causes` |
 | Trace only | `python/sglang/srt/managers/cache_controller.py`; `python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py`; a new focused trace test | `test/registered/unit/mem_cache/test_l3_trace_correlation.py` | `trace: correlate storage operation batches without behavior change` |
 | Behavior only | `python/sglang/srt/mem_cache/hiradix_cache.py`; a new narrow admission test | `test/registered/unit/mem_cache/test_l3_admission_seam.py` | `feat: add fail-open L3 admission seam` |
 | Runtime driver/artifacts | this repository under `experiments/`, `src/agentic_kv/`, `tests/` | local deterministic tests and retained run bundles | separate commits after upstream patch tests pass |
 
-Do not vendor either upstream checkout, add a submodule, modify a read path, alter L1/L2 eviction/configuration, or introduce a policy framework. The trace patch carries opaque IDs only; no trace value is used by admission, queue ordering, key construction, retry, or read behavior.
+Do not vendor either upstream checkout, add a submodule, modify a read path, alter L1/L2 eviction/configuration, or introduce a policy framework. The trace patches carry opaque IDs and observation-only cause records; no trace value is used by admission, queue ordering, key construction, retry, or read behavior.
 
 ## Ordered implementation and acceptance tasks
 
@@ -93,12 +105,12 @@ Pass: A has successful Put evidence, B is locally cold before the request, B rec
 
 ### Task 2: add trace-only correlation and prove it is inert
 
-- [ ] Add `run_id`, `decision_id`, `operation_id`, `batch_ordinal`, and derived `attempt_id` as opaque correlation data. Generate `decision_id` at the seam only for an eligible segment.
+- [ ] Add `run_id`, `observation_id`, `operation_id`, `batch_ordinal`, and derived `attempt_id` as opaque correlation data. Generate `observation_id` at the prospective seam only for an eligible segment; the later behavior patch may add a `decision_id` to the same record, but this task must not compute or apply an admission action.
 - [ ] Store `operation_id` on `StorageOperation` correlation data after construction; derive `attempt_id = operation_id + batch_ordinal` in `_page_backup`; emit adapter records after `_batch_preprocess`, after exists filtering, and after Put/Get result reduction.
-- [ ] Emit JSONL records with logical hashes, physical object keys, each physical `buffer_size`, exists/dedup decision, Put/Get result, and worker-local monotonic sequence. Do not log prompts or tokens.
+- [ ] Emit JSONL records with logical hashes, physical object keys, each physical `buffer_size`, exists/dedup decision, Put/Get result, and worker-local monotonic sequence. The SGLang adapter records `exists_skip`; the separately patched Mooncake boundary records pre-collapse `new_put` / `race_existing` / `put_failure` for actual Put attempts, joined by opaque ID. Do not log prompts or tokens.
 - [ ] Run stock and trace-only builds against the same isolated microcase; compare output tokens, logical hash order, submitted operation order, successful page counts, and queue/ref terminal state.
 
-Pass: deterministic joins exist from decision through operation/batch/physical result; trace-only equals stock on the stated invariants. Fail: a missing/duplicate join, changed key/order/result, or unbounded trace growth. Inconclusive: one side lacks an observable terminal. STOP: revert the trace patch rather than patching policy around uncertain telemetry.
+Pass: deterministic joins exist from observation through operation/batch/physical result; trace-only equals stock on the stated invariants. Fail: a missing/duplicate join, changed key/order/result, or unbounded trace growth. Inconclusive: one side lacks an observable terminal. STOP: revert the trace patch rather than patching policy around uncertain telemetry.
 
 ### Task 3: add the minimal fail-open binary hook
 
@@ -109,13 +121,13 @@ Pass: deterministic joins exist from decision through operation/batch/physical r
 
 Pass: fail-open invokes upstream write; DROP leaves L2 intact and creates no `StorageOperation`, backup queue entry, `ongoing_backup`, host protection, or Mooncake Put. Fail: any L2/control-path mutation or missing fail-open. Inconclusive: test cannot observe the async terminal. STOP: do not test a candidate policy.
 
-### Task 4: enforce prefix closure at the decision boundary
+### Task 4: enforce all-or-none prefix closure at the decision boundary
 
-- [ ] Represent an eligible decision group as root/known-resident anchor plus ordered logical pages; record `anchor_hash`, ordered hashes, and first drop offset.
-- [ ] Unit-test ancestor ADMIT + descendant DROP, ancestor DROP + descendant forced DROP, and a split-chain reconstructed segment.
-- [ ] Send a deliberate policy-produced hole to the runtime probe and verify B's lookup stops at the first missing page; then reject that action before it reaches production policy code.
+- [ ] Represent an eligible decision group as root/known-resident anchor plus ordered logical pages; record `anchor_hash` and ordered hashes. The policy interface returns one action for the entire group.
+- [ ] Unit-test fully admitted group, fully dropped group, descendant-only input rejected as an unprovable group, and a split-chain reconstructed complete group.
+- [ ] Prove the G0 policy interface cannot express a partial group action; use a malformed partial-group fixture only to prove rejection before the runtime path.
 
-Pass: no decision record contains an admitted descendant after the group's first DROP; normal full-prefix restore remains successful. Fail: an admitted unreachable suffix or a read-path change. Inconclusive: page order/anchor cannot be observed. STOP: do not add remote metadata or per-page RPCs to repair it.
+Pass: every decision record contains exactly one action for its complete group; normal full-prefix restore remains successful. Fail: a partial group action, an admitted unreachable suffix, or a read-path change. Inconclusive: page order/anchor cannot be observed. STOP: do not add remote metadata or per-page RPCs to repair it.
 
 ### Task 5: execute the G0 matrix
 
@@ -123,14 +135,14 @@ Run every scenario in a fresh C instance or a truly capacity-isolated namespace;
 
 | Scenario | Procedure | Pass | Fail | Inconclusive | STOP |
 |---|---|---|---|---|---|
-| `ALWAYS_ADMIT` | Hook always admits a fixed shared prefix; compare with stock pinned run. | Output, logical page/hash order, completed Put/Get results, and terminal queue/ref state match stock within a predeclared functional equivalence check. | Any semantic/path divergence. | Missing stock or hook trace terminal. | Do not call hook upstream-equivalent. |
-| `ALWAYS_DROP` | Hook always drops after L2 ack; issue same prefix on A then cold B. | L2 CPU event and request output remain correct; no operation/queue/protection/Put; `completed_put_bytes=0`. | Any L3 mutation or L2/ref error. | L2 or backend terminal cannot be observed. | Do not infer zero Put from a missing aggregate metric. |
-| `CROSS_WORKER_RESTORE` | A admits, B starts local-cold and requests exact prefix. | A completed Put, B completed Get, B storage-loaded pages, and output equality all join by IDs. | B recomputes without a successful remote Get. | Cannot prove B cold or correlate Get. | Shared-L3 premise fails. |
-| `PREFIX_CLOSURE` | Exercise ancestor/suffix decisions and an intentionally invalid attempted hole. | First missing page stops lookup; implementation rejects hole-forming action; no admitted suffix after drop. | A policy-induced unreachable descendant is admitted. | Order/anchor unobservable. | No remote directory/control-plane expansion. |
-| `BYTE_RECONCILE` | **Blocked at source audit.** Current adapter terminal maps a race-existing object and a new Put to the same `0` result. | Not runnable under the current observation boundary. | State classification is source-proven non-injective. | Not applicable; more runs of the same API add no information. | No new-Put payload-efficiency claim; obtain a user decision before changing the observation boundary or metric contract. |
-| `DEDUP_RACE_FAILURE` | Repeat same keys, overlap two writers, and inject/observe a Put failure where Mooncake supports it. | Trace classifies exists-skip/race/Put success/failure separately; every operation has terminal cleanup. | Dedup counted as successful new Put, missing terminal, or leak. | Failure injector unavailable. | Keep the no-failure result narrow; do not claim failure coverage. |
+| `ALWAYS_ADMIT` | Hook always admits a fixed shared prefix; compare with stock pinned run. | Output, logical page/hash order, terminal Put/Get results, and terminal queue/ref state match stock within a predeclared functional equivalence check. | Any semantic/path divergence. | Missing stock or hook trace terminal. | Do not call hook upstream-equivalent. |
+| `ALWAYS_DROP` | Hook always drops after L2 ack; issue same prefix on A then cold B. | L2 CPU event and request output remain correct; no operation/queue/protection/Put; `admitted_payload_bytes=0` and `submitted_payload_bytes=0`. | Any L3 mutation or L2/ref error. | L2 or backend terminal cannot be observed. | Do not infer zero Put from a missing aggregate metric. |
+| `CROSS_WORKER_RESTORE` | A admits, B starts local-cold and requests exact prefix. | A terminal successful Put, B terminal successful Get, B storage-loaded pages, and output equality all join by IDs. | B recomputes without a successful remote Get. | Cannot prove B cold or correlate Get. | Shared-L3 premise fails. |
+| `PREFIX_CLOSURE` | Exercise fully admitted/dropped complete groups and a malformed partial-group fixture. | The interface rejects partial action; normal full-prefix restore remains successful. | A policy-induced unreachable descendant is admitted. | Order/anchor unobservable. | No remote directory/control-plane expansion. |
+| `BYTE_RECONCILE` | Run D1's pre-collapse observation patch with matched SGLang correlation. | Physical-object buffer aggregation joins to `new_put` / `race_existing` / `exists_skip` / `put_failure`; trace-enabled is behaviorally equivalent to trace-disabled. | Missing/non-injective terminal classification or trace behavior change. | One side lacks an observable terminal. | No new-Put payload-efficiency claim. |
+| `DEDUP_RACE_FAILURE` | Repeat same keys, overlap two writers, and inject/observe a Put failure where Mooncake supports it. | Trace classifies exists-skip/race/new-Put/failure separately; every operation has terminal cleanup. | Dedup counted as new Put, missing terminal, or leak. | Failure injector unavailable. | Keep the no-failure result narrow; do not claim `G0-RUNTIME VALIDATED`. |
 | fail-open | Policy deliberately raises once. | One `POLICY_ERROR_FAIL_OPEN`, then upstream Put result and normal cleanup. | Request fails or DROP occurs. | Exception path lacks terminal trace. | Do not enable the hook. |
-| async cleanup | Delay backend work; repeat success, failure, duplicate, shutdown/detach. | `backup_queue=0`, `ack_backup_queue=0`, `ongoing_backup={}`, and host protections return to baseline. | Any residual entry/ref/protection or hang. | Only process exit hides the state. | No runtime policy experiments. |
+| async cleanup | Delay backend work; repeat success, duplicate, fail-open, and shutdown/detach; include a real failure only when the upstream supports non-intrusive observation/injection. | `backup_queue=0`, `ack_backup_queue=0`, `ongoing_backup={}`, and host protections return to baseline. | Any residual entry/ref/protection or hang. | Only process exit hides the state, or failure cannot be observed/injected. | No `G0-RUNTIME VALIDATED` without real failure evidence. |
 | opaque trace ID | Compare trace-disabled and trace-enabled `ALWAYS_ADMIT`; use syntactically different opaque IDs. | Keys, order, decisions, results, output, and cleanup are unchanged. | ID changes behavior or key-space. | Comparison lacks matched artifacts. | Do not collect causal traces. |
 
 ## Raw artifact and manifest contract
@@ -139,11 +151,11 @@ Each attempt writes an immutable directory under ignored `experiments/runs/<run_
 
 - `manifest.json`; source SHAs, resolved Mooncake tag/SHA/version/wheel-or-build SHA-256, model/tokenizer revisions/hashes, hardware/driver, environment, topology, endpoint configs, cache values, policy and patch commits;
 - A/B/C stdout/stderr, exact launch commands, health/segment endpoint responses before/after, and worker-local monotonic event logs;
-- decision, operation, batch/attempt, adapter-object, Get, output-hash, queue/ref/protection snapshot JSONL files;
+- observation/decision, operation, batch/attempt, adapter-object, Get, output-hash, queue/ref/protection snapshot JSONL files;
 - workload input hash, request-to-worker assignment, warm-up/measurement/drain bounds, cleanup method, repeat/order, and a cryptographic checksum list;
-- a one-page outcome record with `PASS`, `FAIL`, `INCONCLUSIVE`, or `STOP`, reason, and links to the first failing event.
+- a one-page outcome record with `gate_outcome` (`PASS`, `FAIL`, `INCONCLUSIVE`, or `STOP`), reason, and links to the first failing event.
 
-The manifest must explicitly contain `claim_state: IMPLEMENTED_UNVALIDATED` only after the hook exists and local tests pass. It remains `ROADMAP` for planning runs and becomes `EXPERIMENTALLY_VALIDATED` only for a retained, reproducible runtime artifact that satisfies the specific scenario—not for G3 performance.
+The manifest must explicitly contain both `claim_state` and `gate_outcome`; they are orthogonal. `claim_state` becomes `IMPLEMENTED_UNVALIDATED` only after the relevant patch exists and local tests pass. It remains `ROADMAP` for planning runs and becomes `EXPERIMENTALLY_VALIDATED` only for a retained, reproducible runtime artifact that satisfies the specific scenario—not for G3 performance. `gate_outcome=INCONCLUSIVE` never upgrades a complete G0 ruling.
 
 ## Completion gate
 

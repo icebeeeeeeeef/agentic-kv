@@ -2,6 +2,10 @@
 
 > 采集截点：2026-08-04（Asia/Shanghai）
 >
+> **路由状态（2026-08-08）：**本文件是岗位市场证据，不是当前工程计划。其早期“vLLM/SGLang 二选一、
+> local eviction/offload、FP8 轴”的项目建议已经被 [PROJECT_PLAN.md](../project/PROJECT_PLAN.md) 的
+> 单一 shared-L3 write-admission scope 取代；不得据此恢复这些被排除项或升级实现/性能 claim。
+>
 > 固定项目内核：在 vLLM 或 SGLang 中选定一个框架，研究多轮 Agent prefix/KV cache 复用行为，做小范围策略改进、A/B 对照与 FP8 KV cache 实验轴；单张 24GB GPU，8–10 周。
 
 ## 结论先行

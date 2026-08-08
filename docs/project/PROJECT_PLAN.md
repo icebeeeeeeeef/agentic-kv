@@ -1,10 +1,12 @@
 # 多轮 Agent 负载下共享 KV Pool 的 L3 写入准入
 
 > 文档性质：项目总体规划、证据合同与统一口径  
-> 统一版本：2026-08-05  
+> 统一版本：2026-08-08
 > 当前裁决：**Conditional Select（有条件立项）**  
-> 当前 claim state：源码接缝为 SOURCE_VERIFIED；负载、探针、conditional ledger、hook 与策略均仍是 ROADMAP，尚无 IMPLEMENTED_UNVALIDATED 或 EXPERIMENTALLY_VALIDATED 的个人产出  
+> 当前 claim state：SGLang 接缝及 Mooncake `v0.3.12.post1` candidate source 为 SOURCE_VERIFIED；其 runtime compatibility 仍 UNRESOLVED。负载、探针、conditional ledger、hook 与策略均仍是 ROADMAP，尚无 IMPLEMENTED_UNVALIDATED 或 EXPERIMENTALLY_VALIDATED 的个人产出
 > 本版不做时间排期。所有阶段按证据依赖排序，不按周数排序。
+>
+> 方法论关系：本计划是 [PROJECT_EVALUATION_SOP.md](PROJECT_EVALUATION_SOP.md) 在本项目上的具体化。SOP 约束选题、能力信号、证据与主张边界；本计划定义当前唯一机制、Gate、STOP 与实验合同。两者发生方法论冲突时，修订本计划而非降低 SOP 标准；实际完成状态仍以 [STATUS.md](../../STATUS.md) 为准。
 
 ---
 
@@ -34,7 +36,7 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 
 在相同请求序列、worker 分配、L2 write-through、缓存容量和 Mooncake 后端下：
 
-> 相比 ADMIT_ALL 与 calibration set 上调优后冻结的简单静态准入规则，利用决策时已经可见的复用价值信号，能否在预注册 TARGET_HELD_OUT Agent workload 上改善 Goodput@TTFT-SLO，或在 Goodput 不劣的前提下显著减少 Mooncake 确认完成的 KV payload 写入字节和无效写入？
+> 相比 ADMIT_ALL 与 calibration set 上调优后冻结的简单静态准入规则，利用决策时已经可见的复用价值信号，能否在预注册 TARGET_HELD_OUT Agent workload 上改善 Goodput@TTFT-SLO，或在 Goodput 不劣的前提下显著减少 `new_physical_put_bytes` 与无效写入？
 
 如果最强静态规则已经吃掉全部稳定空间，项目必须承认“复杂策略不值得”，不能继续包装成优化成功。
 
@@ -156,14 +158,44 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 
 这是待验证假设，不是项目结论。
 
-### 3.2 最小价值主张
+### 3.2 三层完成定义
 
-项目成功不要求“击败 Mooncake”或发现没人见过的新算法。最低合格产出是：
+项目不以“调出一个更好的 threshold”作为完成条件。完成物分三层，后层不是前层的自动推论：
 
-1. 找到准入策略在哪些坐标下值得、在哪些坐标下不值得；
-2. 证明结果来自 L3 admission，而非 L2、路由或 workload 分叉；
-3. 给出 Mooncake physical-object payload 字节与端到端 SLO 的闭环；
-4. 即使复杂策略失败，也能说明简单规则为什么已经足够。
+| 层 | 名称 | 最小交付 | 不意味着什么 |
+|---|---|---|---|
+| R | **Runtime backbone** | 在真实 SGLang→Mooncake 路径上，独立 trace-only correlation、最小 fail-open admission seam、all-or-none closure 与生命周期 oracle 都有 focused test 和可复现 run artifact；A Put→cold B Get 能被路径真值解释 | 不意味着 G0 已完整通过，更不意味着某个策略有效或有性能收益 |
+| F | **Flagship evidence closure** | G0/G1 的 required artifacts、workload/trace/ledger 与明确 Gate ruling 齐全；它可以收口为“shared L3 无价值”“静态规则足够”或 `STOP`，而不是只保留正结果 | 不意味着 VALUE_DENSITY 必须存在，也不意味着可升级公开性能标题 |
+| P | **Optional policy-positive** | 仅在 G2a 证明可行动 residual 后，实现最简单候选并经 G2b/G3 的 TARGET_HELD_OUT 在线裁决 | 不意味着 runtime backbone 的复杂度来自该 policy，失败时不得反向否定已完成的工程证据 |
+
+R 层是防止项目退化为“一个 `decide()` 函数 + 参数扫描”的最低工程线：删除 benchmark/分析脚本后，审查者仍必须能看到 upstream patch series、focused tests、异步终态 oracle、trace schema 和 stock/trace/forced-action 对照。R 层的实现证据可使对应组件成为 `IMPLEMENTED_UNVALIDATED`；只有每个具体 Gate 场景有 retained runtime artifact 才能升级该场景的 claim，D10 的真实 failure 缺失仍会使完整 G0 结论为 `INCONCLUSIVE`。
+
+### 3.3 预注册的判断与剪枝顺序
+
+项目深度来自可反驳的工程选择，不来自候选数量。执行必须按下列 A→B→C 顺序留下证据：
+
+| 判断 | 候选与已选项 | 为什么这样剪枝 | 何时翻案 |
+|---|---|---|---|
+| A：behavior seam 放在哪里 | L1→L2 前 / **L2 ack 后、`write_storage` 前** / Mooncake Put 后 | 前者污染 L2 生命周期，后者已支付 L3 成本；中间 seam 是唯一只改变 L3 admission 的位置 | pinned runtime 证明该 seam 无法保持 L2 或 async 不变量，则 STOP，不迁移到其他层 |
+| B：先改变行为还是先取得路径真值 | 只靠 source / **trace-only 先行** / 直接加 behavior hook | source 不能证明异步终态与 physical-object attribution；先加行为会把观测回归和机制回归混在一起 | trace-only 不能通过 non-interference，就停止 trace/payload 分支，不用 policy 绕过 |
+| C：是否值得复杂策略 | ADMIT_ALL / SECOND_HIT / STATIC_FREQ* / **仅在 G2a 后的 VALUE_DENSITY** | 先证明 shared L3、ADMIT_ALL waste 和静态规则 residual，再允许复杂候选；静态规则胜出就是有效负结论 | G2a residual 不达预注册阈值，删除 VALUE_DENSITY，不进入 G2b/G3 候选开发 |
+
+### 3.4 工程最低交付与反向删除测试
+
+R 层必须同时满足以下最小所有权，不允许以 policy 参数实验替代其中任一项：
+
+1. **路径实现**：独立 trace-only patch 在不改变 key、队列、重试、Put/Get、输出或 cleanup 的条件下，关联 observation/operation/batch/attempt/object terminal；D1 的 pre-collapse Mooncake observation 另行证明 non-interference。
+2. **行为实现**：在已验证 trace 的同一 source seam 上，实现 `ALWAYS_ADMIT`、`ALWAYS_DROP` 与 `POLICY_ERROR_FAIL_OPEN`，且 DROP 不创建 L3 async state。
+3. **正确性实现**：完整 group 的 all-or-none closure、success/dedup/race/fail-open/shutdown-detach 终态和真实 failure 的可得性都写入 scenario oracle；不可得 failure 只能留下 `INCONCLUSIVE`。
+4. **可审查实现**：[patch provenance](../../patches/README.md)、focused tests、manifest 和原始事件可定位到固定 upstream SHA；不把 upstream shared cache、transfer 或 restore 计为 owned code。`PLANNED` series 只固定未来补丁边界，不能当作 patch 或实现证据。
+
+反向删除必须至少回答：
+
+- 删除 behavior hook：`ALWAYS_DROP` 的无 L3 operation/queue/protection/Put 性质消失，路径退回 upstream always-write；
+- 删除 trace-only patch：serving 仍可运行，但不能再把任何 decision→physical terminal 数字作为证据；
+- 删除本项目全部 patch：stock A→Mooncake→cold B restore 仍成立，明确 shared pool/transfer/read lifecycle 属于 upstream。
+
+这些是 ownership oracle，不是要求为了展示复杂度另造插件框架或第二数据面。
 
 ---
 
@@ -224,7 +256,9 @@ DROP 必须满足：
 
 **b058dc910619c9d4bce9e9e24117104ffc491fa6**
 
-Mooncake 的 exact commit、构建参数与镜像/二进制 hash 必须在 G0 部署时一并 pin。当前文档尚未把某个 Mooncake commit 标为 SOURCE_VERIFIED，因此不得只写“最新版”后继承本规划的源码结论。
+Mooncake `v0.3.12.post1` candidate 的 exact source commit 已固定为
+`6041a609a8c3af35e778f70db344f145c2914980`（SOURCE_VERIFIED）；其 target-Linux wheel/build identity、
+API/build probe 与与该 SGLang adapter 的 runtime compatibility 仍 UNRESOLVED，必须在 G0 部署时与镜像/二进制 hash 一并记录。不得只写“最新版”，也不得把 tag/source audit 误写成 runtime compatible。
 
 首轮使用普通 dense model，并固定：
 
@@ -248,10 +282,10 @@ Mooncake 的 exact commit、构建参数与镜像/二进制 hash 必须在 G0 �
 
 推荐 hook 位于 HiRadixCache.write_backup_storage 内：完成 keys、host_indices 与 prefix_keys 构造之后，调用 HiCacheController.write_storage 之前。此时 L2 DMA 已 ack，但尚未创建 StorageOperation。
 
-这里的“唯一 hook”专指唯一 **behavior-changing seam**。为了把异步 backend 结果关联回 admission decision，纯观测 instrumentation 允许最小触及：
+这里的“唯一 hook”专指唯一 **behavior-changing seam**。为了把异步 backend 结果关联回 prospective seam 和后续 admission decision，纯观测 instrumentation 允许最小触及：
 
-1. 在 decision 点生成 opaque run_id / decision_id；
-2. 将它随 StorageOperation 传播，不参与 queue、batch、retry 或读写语义；
+1. 在 prospective seam 生成 opaque run_id / observation_id；behavior patch 完成后才在同一记录追加 decision_id；
+2. 将 opaque ID 随 StorageOperation 传播，不参与 queue、batch、retry 或读写语义；
 3. controller 形成 batch 时生成 attempt_id，并记录 batch_id → operation/logical keys；
 4. adapter 记录 batch_id / attempt_id → physical keys、buffer_size 与逐 object result；
 5. collector 通过这些 ID 做确定性 join，而不是依赖 wall clock 或仅靠 key 猜测。
@@ -266,14 +300,14 @@ Mooncake 的 exact commit、构建参数与镜像/二进制 hash 必须在 G0 �
 4. DROP 是否完全绕开 L3 状态；
 5. 异步 ack、引用保护和失败回调是否保持配对；
 6. remote lookup 的前缀闭包要求。
-7. duplicate key、跨 worker race、partial batch 和 Put failure 如何进入 trace。
-8. decision_id / batch_id / attempt_id 如何从 hook 传播到 adapter result。
+7. sequential dedup、跨 worker race 与 Put failure 如何进入 trace；固定上游未实现 partial success，不把它误写成已覆盖语义。
+8. observation_id（及 behavior patch 后的 decision_id）/ batch_id / attempt_id 如何从 seam 传播到 adapter result。
 
 ### 5.3 运行时正确性不变量
 
 1. **L2 不变量**：admission 不改变 L2 DMA ack、CPU cache 可用性、write-through、refcount 或 eviction 实现。
 2. **upstream 等价不变量**：ALWAYS_ADMIT 的 keys、host indices、顺序、完成结果与 cross-worker hit 行为必须和未打 patch 的 pinned commit 对齐。
-3. **异步生命周期不变量**：成功、失败、重复写、partial batch 和 shutdown 后，queue、ongoing_backup、host protection 与 buffer reference 都回到基线。
+3. **异步生命周期不变量**：成功、sequential dedup、two-writer race、policy exception fail-open 与 shutdown/detach 后，queue、ongoing_backup、host protection 与 buffer reference 都回到基线。若没有真实、非侵入式 failure evidence，failure coverage 只能是 `INCONCLUSIVE`，不得报告 `G0-RUNTIME VALIDATED`；固定上游未实现 partial success，不能用 mock 将它包装成已覆盖语义。
 4. **key-space 不变量**：两个 worker 使用相同 model/tokenizer revision、served model name、page size、tenant、extra_backend_tag 与存储配置；不同 run 隔离状态。
 5. **serving correctness 不变量**：admission 只影响是否产生 L3 副本；固定解码下生成 token、请求成功性和 L1/L2 命中正确性不变。
 
@@ -283,12 +317,11 @@ remote prefix lookup 会在第一个缺失 page 处停止。因此策略不能�
 
 > ancestor 被 DROP，但 descendant 单独写入、实际永远不可达的 prefix hole。
 
-最小实现采用以下规则：
+G0 的最小实现采用以下规则（[D9](DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none)）：
 
-- admission 只能作用于从 root 或“本次操作可证明已驻留”的 anchor 开始的连续 prefix group；
-- group 内首次 DROP 后，其全部 descendant suffix 强制 DROP；
-- 如果 callback 只给出一个 descendant suffix，且无法从同一次操作证明 ancestors 可达，则强制 DROP；不能仅因“整个 suffix 一起写”就假设 closure 成立；
-- 若 upstream 能提供 root-to-leaf 的完整 prefix group，则优先对完整 group 做 all-or-none；
+- admission 只能作用于从 root 或“本次操作可证明已驻留”的 anchor 开始、含有有序 logical pages 的完整连续 prefix group；
+- 一个 group 只能整体 `ADMIT_TO_L3` 或整体 `DROP`；G0 不实现 group 内首个 DROP 后的逐页 suffix 规则；
+- 如果 callback 只给出一个 descendant suffix，且无法从同一次操作证明完整 group/ancestors 可达，则整体 DROP；不能仅因“整个 suffix 一起写”就假设 closure 成立；
 - 不为了逐 page 精细 admission 新增远端 metadata RPC；
 - 将后续 upstream-induced unavailability 与 policy-induced hole 分开；只有存在 SOURCE_VERIFIED telemetry 时才进一步归因为 remote eviction，否则只报告 query-time unavailable。本项目只要求 admission 时不主动制造新 hole。
 
@@ -338,15 +371,9 @@ L1/L2 原始生命周期、event 产生和实际数据运动仍属于 upstream�
 
 ### 6.3 Ownership 删除测试
 
-最终候选必须通过三层删除测试：
+本节的具体 R 层 oracle 以 [3.4](#34-工程最低交付与反向删除测试) 为准。候选策略若存在，另须将 decision 固定为 `ADMIT_ALL`：选择性收益消失且退化为 stock write-through + Mooncake 行为。
 
-1. **删除 policy**：将 decision 固定为 ADMIT_ALL 后退化为 stock write-through + Mooncake 行为，候选声称的选择性收益消失。
-2. **删除全部 runtime patch**：直接运行 pinned upstream，Worker A → Mooncake → Worker B 的 shared L3 reuse 仍成立，证明共享、传输、读取和 eviction 属于 upstream。
-3. **删除 sidecars/instruments**：线上 serving 和缓存正确性仍成立，但可控 workload、机会判断、边界、因果解释和数字失去证据链。
-
-如果删除一小段阈值判断后项目几乎没有任何 owned depth，说明 tracer/ledger/hook 仍不够深入；如果删除 upstream 后整个系统不能运行，这是正常依赖，不得把 upstream 算成自己的工程量。
-
-反向地说：删除 Mooncake，shared L3 消失；删除 SGLang HiCache，L1/L2 生命周期与 L3 lookup 消失；删除本项目，只应消失“选择性 L3 admission + 可复现实验和证据”。
+如果删除一小段阈值判断后项目几乎没有任何 owned depth，说明 R 层 tracer/hook/lifecycle oracle 没有完成；这不是增加 policy 框架的理由。删除 Mooncake 后 shared L3 消失；删除 SGLang HiCache 后 L1/L2 生命周期与 L3 lookup 消失；删除本项目后只应消失“选择性 L3 admission + 可复现实验和证据”。
 
 ---
 
@@ -418,7 +445,7 @@ L1/L2 原始生命周期、event 产生和实际数据运动仍属于 upstream�
 - L1/L2/L3 lookup、hit、miss；
 - L1 → L2 backup 完成；
 - eligible write group、admission decision、输入信号和 reason code；
-- StorageOperation enqueue、Mooncake Put submitted、dedup/race、partial success、Put/Get 完成、失败与耗时；
+- StorageOperation enqueue、Mooncake Put submitted、dedup/race、Put/Get terminal、失败与耗时；
 - restore token/byte；
 - 因 miss 而重算的 token；
 - TTFT、TPOT、完成状态。
@@ -441,8 +468,13 @@ ADMIT 不等于实际写入。证据链必须完整区分：
 - 由 opaque ID 传播得到的 run、worker、request、decision、batch、operation 与 attempt 标识；
 - logical storage key 和展开后的 physical K/V keys；
 - 每个 physical object 的 buffer_size；
-- 每个 object 的 success / exists / missing / failure；
+- 每个 object 的 adapter-visible success / exists / missing / failure；
 - worker-local monotonic sequence 与开始/结束时间。
+
+要将“新物理 Put”与 race 区分，另在 Mooncake `OBJECT_ALREADY_EXISTS -> success` 归约前由独立
+trace-only observation patch 记录原始原因码。该 patch 的授权、不可变行为边界与停止条件由
+[D1](DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 固定；其未实现或未通过
+non-interference proof 时，不能产生 new-Put payload claim。
 
 至少保留以下量，不能混用：
 
@@ -452,13 +484,18 @@ ADMIT 不等于实际写入。证据链必须完整区分：
 | eligible_payload_bytes | 符合 upstream L3 write eligibility 的 payload |
 | admitted_payload_bytes | policy 决定 ADMIT 的 payload |
 | submitted_payload_bytes | 去重检查后实际提交 Put 的 payload |
-| completed_put_bytes | 后端确认成功的 Put payload |
+| new_physical_put_bytes | 仅由 pre-collapse 原因码确认、确由当前 writer 新建物理 object 的 payload |
+| race_existing_bytes | precheck 未见对象、但 Put 在归约前确认竞争对象已存在的 payload |
+| exists_skip_bytes | precheck 已存在而未提交 Put 的 payload |
+| failed_put_bytes | Put 未获得成功或 race-existing 终态的 payload |
 | completed_get_bytes | 后端确认成功的 Get payload |
-| dedup_or_race_skipped_bytes | 已存在或并发竞争而未产生新 Put 的 payload |
+| dedup_or_race_skipped_bytes | `exists_skip_bytes + race_existing_bytes`；仅作派生汇总，不能替代两者 |
 
-batch_exists 只产生可用性事件，数据 payload bytes 记为 0。简历中的“减少写入 X%”默认指 completed_put_bytes；如果只能拿到 adapter offered/submitted bytes，必须明确降级措辞。
+batch_exists 只产生可用性事件，数据 payload bytes 记为 0。简历中的“减少写入 X%”默认指
+`new_physical_put_bytes`；如果只能拿到 adapter-visible offered/submitted bytes，必须明确降级措辞。
+不得把一个未区分 race 的 success 汇总命名为 `completed_put_bytes`。
 
-这些量是 Mooncake adapter 可见的 **KV payload bytes**，不是 NIC/wire bytes：它们不含协议头、metadata、复制和重试的全部网络开销。不得把它们包装成“真实网络流量”。
+这些量是 adapter trace 或 D1 pre-collapse observation 可归属的 **KV payload bytes**，不是 NIC/wire bytes：它们不含协议头、metadata、复制和重试的全部网络开销。不得把它们包装成“真实网络流量”。
 
 ### 8.3 派生指标
 
@@ -475,7 +512,7 @@ batch_exists 只产生可用性事件，数据 payload bytes 记为 0。简历�
 
 写放大可定义为：
 
-    completed Put payload bytes / useful completed L3 Get payload bytes
+    new physical Put payload bytes / useful completed L3 Get payload bytes
 
 分母为 0 时分别报告两个绝对值，不制造无意义比率。
 
@@ -485,7 +522,8 @@ batch_exists 只产生可用性事件，数据 payload bytes 记为 0。简历�
 
 因此本版默认：
 
-- 在线只报告 adapter-visible completed Put/Get、query-time availability、queue 和 SLO；
+- 在线只报告 adapter-visible Put/Get、query-time availability、queue 和 SLO；其中 new physical Put
+  仅在 D1 observation patch 已通过 non-interference proof 后报告；
 - 一次 exists=false 只称“查询时不可用”，不能仅凭它断言发生 eviction；
 - occupancy/eviction 只在 conditional ledger 中标为 modeled；
 - 若 G0 后续找到并 pin 官方 Mooncake metrics/event API，才可新增一列 SOURCE_VERIFIED upstream telemetry；在此之前不以精确在线 eviction 作为验收条件。
@@ -525,7 +563,7 @@ Replay 不模拟完整 GPU scheduler、CUDA 执行、真实网络竞争或最终
 - 用手工 tiny eligible stream 验证每个 action 与 payload 变化；
 - 对很小的有界 conditional ledger 使用 exhaustive oracle 验证实现；
 - 对每种 policy 独立推进 modeled capacity/eviction state machine；
-- 用 no-eviction microcase 对齐 runtime 的 action、eligible/submitted/completed bytes 与 dedup；
+- 用 no-eviction microcase 对齐 runtime 的 action、eligible/submitted/new-physical bytes（D1 可用时）与 dedup；
 - 只有获得 SOURCE_VERIFIED eviction 规则或 telemetry 后，才要求 bounded-capacity replay 与 runtime 对齐；
 - 每份 eligibility stream 必须记录 source policy/run，不能隐去 treatment 来源；
 - 不把 conditional exact/upper bound 写成系统级“最优策略”。
@@ -672,11 +710,11 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 | 场景 | 目的 | 必须观察 |
 |---|---|---|
 | CROSS_WORKER_RESTORE | 证明 A 写、B 远端读 | Mooncake Put/Get、B 本地冷、prefill 减少 |
-| ALWAYS_DROP | 证明 DROP 不碰 L2 控制面且无 L3 Put | L2 write-through 路径、配置、refcount 正确性与 eviction 实现不变；不要求内容或 eviction 事件序列相同；completed Put bytes = 0 |
+| ALWAYS_DROP | 证明 DROP 不碰 L2 控制面且无 L3 Put | L2 write-through 路径、配置、refcount 正确性与 eviction 实现不变；不要求内容或 eviction 事件序列相同；`admitted_payload_bytes = submitted_payload_bytes = 0`，且无 L3 operation/queue/protection/Put |
 | ALWAYS_ADMIT | 证明 hook 等价于 stock write-through path | correctness、bytes、TTFT 落在等价区间 |
 | PREFIX_CLOSURE | 证明策略不制造不可达 descendant | remote lookup 无 policy-induced hole |
-| BYTE_RECONCILE | 证明 trace 对账 KV payload | adapter physical-object buffer 与 trace 聚合一致 |
-| DEDUP_RACE_FAILURE | 证明 ADMIT 与完成写入被正确区分 | duplicate/race/partial/failure 全部进入 DecisionTrace |
+| BYTE_RECONCILE | 证明 trace 对账 KV payload | adapter physical-object buffer 与 trace 聚合一致；D1 pre-collapse 原因码区分 new/race/exists-skip/failure |
+| DEDUP_RACE_FAILURE | 证明 ADMIT 与完成写入被正确区分 | sequential dedup、two-writer race、Put failure（可取得时）全部进入 DecisionTrace；failure injector 不可得时为 `INCONCLUSIVE`，不能升级 G0 |
 
 ### 12.2 离线边界矩阵
 
@@ -711,13 +749,13 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 - TTFT-SLO 在看候选结果前预注册；
 - offered load 选择在 baseline service curve 的可区分区域；
 - p50/p95/p99 TTFT 为诊断指标；
-- completed L3 KV payload bytes、not-read-within-H / closed-DAG unused、useful restore 和 recompute 是机制解释；
+- `new_physical_put_bytes`、not-read-within-H / closed-DAG unused、useful restore 和 recompute 是机制解释；`new_physical_put_bytes` 仅在 D1 observation 已通过 non-interference 后可报告；
 - 所有 candidate overhead 计入端到端结果。
 
 候选可以通过两种方式成立：
 
 1. 在相近 L3 写入预算下，提高 Goodput@TTFT-SLO；
-2. 在预注册的不劣 Goodput 范围内，显著减少 completed L3 Put bytes。
+2. 在预注册的不劣 Goodput 范围内，显著减少 `new_physical_put_bytes`。
 
 “显著”的统计和工程阈值必须在 calibration 后、TARGET_HELD_OUT 前冻结；不能事后按图挑阈值。
 
@@ -743,7 +781,7 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 - one-shot，或复用只发生在同 worker 的 L2 保留期内：L2_ONLY / DROP_ALL 应最好；
 - 短 prefix 的远端写读成本不低于重算；
 - 热点变化快于历史窗口：旧热度造成 false positive / false negative；
-- Mooncake dedup 已消除大部分重复 Put：可优化 completed payload 很小；
+- Mooncake dedup 已消除大部分重复 Put：可优化的 `new_physical_put_bytes` 很小；
 - 瓶颈位于 read、GPU compute 或 L2，而不是 L3 write/capacity；
 - 异步 Put 被完全隐藏：可能只有 payload/capacity 收益，没有 Goodput 收益；
 - STATIC_FREQ* 自己的在线 trace 中，unused-put 与 dropped-then-demanded residual 均低于物质性阈值：动态候选没有存在必要；
@@ -762,9 +800,9 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 - hook 的前后状态、异步 ack 和 DROP 语义被测试证明；
 - Worker A → L3 → fresh Worker B 的恢复链稳定；
 - prefix closure 可在不增加远端控制面的情况下保证；
-- Mooncake KV payload bytes 可对账；
-- ALWAYS_ADMIT 与未改 upstream 对齐，ALWAYS_DROP 的 completed Put bytes 为 0；
-- duplicate/race/partial/failure 均能关联到 decision trace；
+- Mooncake KV payload bytes 可对账，且 D1 pre-collapse trace 可区分 new Put、race-existing、exists-skip 与 failure；
+- ALWAYS_ADMIT 与未改 upstream 对齐，ALWAYS_DROP 的 admitted/submitted payload bytes 为 0，且无 L3 operation；
+- duplicate/race 能关联到 decision trace；真实 Put failure 必须有 runtime evidence，否则该项为 `INCONCLUSIVE`，不得称 G0 validated；
 - 输出一致且无 hang、queue/ref leak。
 
 STOP：
@@ -781,7 +819,7 @@ STOP：
 - generator 可完全重放；
 - tiny trace 手算与 replay 一致；
 - trace 与 Mooncake adapter bytes 对账；
-- replay 在 no-eviction microcase 上复现给定 eligibility stream 的 action、eligible/submitted/completed bytes 与 dedup；
+- replay 在 no-eviction microcase 上复现给定 eligibility stream 的 action、eligible/submitted/new-physical bytes（D1 可用时）与 dedup；
 - 每个 policy 独立演化 modeled resident set；只有 SOURCE_VERIFIED eviction 规则/telemetry 存在时，才把 bounded-capacity 对齐列为 runtime 验收；
 - online features 与 future-aware upper-bound features 被结构性隔离；
 - calibration、conditional-replay-validation、TARGET_HELD_OUT 与 OOD_SHIFT workload 在调参前冻结；
@@ -867,7 +905,7 @@ STOP / 负结果：
 - 置信区间覆盖噪声区；
 - 机制字节改善不能传导到端到端 SLO，且原因无法解释。
 
-如果异步写入被完全隐藏、候选稳定减少 completed Put bytes 但 Goodput 无变化，则只能降级为 **traffic-efficiency / capacity-efficiency** 结论；不能把流量下降换算成 TTFT 提升。
+如果异步写入被完全隐藏、候选稳定减少 `new_physical_put_bytes` 但 Goodput 无变化，则只能降级为 **traffic-efficiency / capacity-efficiency** 结论；不能把流量下降换算成 TTFT 提升。
 
 ### G4：证据封装
 
@@ -883,9 +921,20 @@ STOP / 负结果：
 
 ## 14. 当前 Evidence Ledger
 
-### 14.1 Claim-state 词典
+### 14.1 Claim state 与 Gate outcome 是正交字段
 
-SOURCE_VERIFIED 与个人实现状态不是同一条线性状态机。本文强制使用：
+SOURCE_VERIFIED 与个人实现状态不是同一条线性状态机；Gate outcome 也不是 claim state。每个结论或
+artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未实现或 `INCONCLUSIVE` 的事实。
+
+| 字段 | 回答的问题 | 合法值 | 规则 |
+|---|---|---|---|
+| `claim_state` | 这条主张被何种证据支持？ | `ROADMAP`、`SOURCE_VERIFIED`、`IMPLEMENTED_UNVALIDATED`、`EXPERIMENTALLY_VALIDATED` | 仅随对应 source/code/runtime evidence 升级；一个 Gate 的 PASS 只升级它所支持的具体 claim |
+| `gate_outcome` | 这次 scenario / Gate 执行发生了什么？ | `PASS`、`FAIL`、`INCONCLUSIVE`、`STOP` | 每份 run bundle 都必须有；`INCONCLUSIVE` 不是 PASS，也不能提升完整 Gate 或 performance claim |
+
+规划、决议和运行结果应各自保持位置：`DECIDED` 是决议文件的状态，不是上述任何 claim state；例如 D1 可为
+`DECIDED` 且其 new-Put attribution 仍为 `ROADMAP/STOP`。
+
+本文强制使用以下 claim-state 词典：
 
 | 状态 | 允许措辞 | 禁止措辞 |
 |---|---|---|
@@ -894,12 +943,12 @@ SOURCE_VERIFIED 与个人实现状态不是同一条线性状态机。本文强�
 | IMPLEMENTED_UNVALIDATED | 代码、单测、forced allow/drop 已存在 | 跨 worker 有效、性能提升、线上成立 |
 | EXPERIMENTALLY_VALIDATED | 在明确 topology/workload/commit 下得到可复现观察 | production-ready、普适收益、大集群外推 |
 
-EXPERIMENTALLY_VALIDATED 再区分：
+`EXPERIMENTALLY_VALIDATED` 再区分：
 
 1. **功能正确性**：ALLOW/DROP 只改变 L3 Put，L2、输出和 ref/queue 生命周期正确，Worker A 写后 Worker B 可真实读取。
 2. **效率结果**：固定 cohort、paired order、重复实验、raw logs、置信区间与 TARGET_HELD_OUT 都齐备；进一步区分 payload/capacity efficiency 与 Goodput/TTFT performance。
 
-功能正确不自动推出性能有效。
+功能正确不自动推出性能有效；一个 `G0-RUNTIME VALIDATED` 也不自动推出 G1/G2/G3。
 
 ### 14.2 当前账本
 
@@ -913,7 +962,7 @@ EXPERIMENTALLY_VALIDATED 再区分：
 | Agent Prefix-DAG 会造成 ADMIT_ALL 浪费 | ROADMAP hypothesis | 尚无项目数据 | 只能说“待测假设” |
 | STATIC_FREQ* own-arm trace 留有可行动 residual | ROADMAP | 尚无数据 | 禁止当作事实 |
 | VALUE_DENSITY 优于静态规则 | ROADMAP | 尚无数据 | 禁止写进简历 |
-| 双 worker 下减少 completed Put payload 且 Goodput 非劣 | ROADMAP | 尚无数据 | 只能留 X 占位 |
+| 双 worker 下减少 new physical Put payload 且 Goodput 非劣 | ROADMAP | 尚无数据；D1 observation patch 尚未实现 | 只能留 X 占位 |
 | 双 worker 下改善 Goodput@TTFT-SLO | ROADMAP | 尚无数据 | 只能留 Y 占位 |
 
 本表必须随实验更新。任何升级为 EXPERIMENTALLY_VALIDATED 的 claim，都要附运行 ID、commit、原始日志与统计方法。
@@ -939,14 +988,14 @@ EXPERIMENTALLY_VALIDATED 再区分：
 
 条件：
 
-- TARGET_HELD_OUT 上 completed Put payload 达到预注册下降阈值；
+- TARGET_HELD_OUT 上 `new_physical_put_bytes` 达到预注册下降阈值；
 - Goodput 满足预注册 non-inferiority，但没有统计与工程上可信的提升；
 - 收益不是 dedup、清池、顺序或错误计数造成；
 - 明确报告“未观察到 TTFT/Goodput 改善”。
 
 可叙述为：
 
-> 候选在固定 SLO 表现下减少了 Mooncake completed Put payload 与 not-read-within-H；异步写入被隐藏，因此没有声称 TTFT/Goodput 提升。
+> 候选在固定 SLO 表现下减少了 Mooncake new physical Put payload 与 not-read-within-H；异步写入被隐藏，因此没有声称 TTFT/Goodput 提升。
 
 ### 终局 B：简单规则已经足够
 
@@ -1120,11 +1169,11 @@ EXPERIMENTALLY_VALIDATED 再区分：
 
 ### 20.2 只有性能正结果完成后
 
-> 基于 SGLang HiCache 构建多轮 Agent Prefix-DAG 负载与 KV 证据关联探针，在固定 L2 write-through 的前提下实现 shared L3 写入准入，并在 2 Worker + 1 Mooncake Store 环境中对比 ADMIT_ALL、second-hit 与调优静态阈值；在 TARGET_HELD_OUT workload 下将 completed L3 Put payload bytes 降低 X%，Goodput@TTFT-SLO 提升 Y%，并给出低复用、宽松容量和远端恢复过慢时的失效边界。
+> 基于 SGLang HiCache 构建多轮 Agent Prefix-DAG 负载与 KV 证据关联探针，在固定 L2 write-through 的前提下实现 shared L3 写入准入，并在 2 Worker + 1 Mooncake Store 环境中对比 ADMIT_ALL、second-hit 与调优静态阈值；在 TARGET_HELD_OUT workload 下将 new physical L3 Put payload bytes 降低 X%，Goodput@TTFT-SLO 提升 Y%，并给出低复用、宽松容量和远端恢复过慢时的失效边界。
 
 ### 20.3 只有 payload / capacity efficiency 成立
 
-> 基于 SGLang HiCache + Mooncake 实现固定 L2 后的 shared L3 写入准入；在 TARGET_HELD_OUT workload 上，相对调优静态阈值将 completed Put payload bytes 降低 X%，Goodput@TTFT-SLO 保持在预注册 non-inferiority 范围内；未观察到可信 TTFT/Goodput 提升，并量化异步写入被隐藏时的适用边界。
+> 基于 SGLang HiCache + Mooncake 实现固定 L2 后的 shared L3 写入准入；在 TARGET_HELD_OUT workload 上，相对调优静态阈值将 new physical Put payload bytes 降低 X%，Goodput@TTFT-SLO 保持在预注册 non-inferiority 范围内；未观察到可信 TTFT/Goodput 提升，并量化异步写入被隐藏时的适用边界。
 
 ### 20.4 如果静态规则胜出
 
@@ -1161,14 +1210,15 @@ EXPERIMENTALLY_VALIDATED 再区分：
 
 1. 固定 source、模型、tokenizer 与三级容量；
 2. 打通并证明 Worker A Put → fresh Worker B Get；
-3. 实现 ALWAYS_ADMIT / ALWAYS_DROP 的最小 hook，验证 L2 控制面不变与 completed Put payload 归零；
-4. 验证 prefix closure 和异步状态；
-5. 建立最小 trace + byte reconciliation；
-6. 用受控 Prefix-DAG 跑 G2a opportunity test；
-7. 只有 G2a 通过，才在 conditional ledger 中实现并冻结 VALUE_DENSITY；
-8. 只有 candidate 未被 G2b conditional replay rejection filter 拒绝，才实现 runtime candidate，并标为 IMPLEMENTED_UNVALIDATED；
-9. 只有 G3 TARGET_HELD_OUT 在线结果通过，才升级公开标题和对应的效率/性能 claim state。
+3. 先实施 D1 的 Mooncake pre-collapse trace-only observation，并以 trace-disabled/trace-enabled oracle 证明不干扰；在此前不运行 `BYTE_RECONCILE`，不作 new-Put payload claim；
+4. 再实现 SGLang trace-only correlation，证明 observation→operation→batch/attempt→adapter terminal 的 join 与 stock 等价；
+5. 只有 trace-only 已通过相应 non-interference oracle，才实现 ALWAYS_ADMIT / ALWAYS_DROP / POLICY_ERROR_FAIL_OPEN 最小 hook；
+6. 验证 prefix closure、dedup/race、fail-open 与 async/shutdown-detach 终态；真实 failure 不可得时保留 `INCONCLUSIVE`，不得称 G0 validated；
+7. 用受控 Prefix-DAG 跑 G2a opportunity test；
+8. 只有 G2a 通过，才在 conditional ledger 中实现并冻结 VALUE_DENSITY；否则以静态规则足够或无机会收口；
+9. 只有 candidate 未被 G2b conditional replay rejection filter 拒绝，才实现 runtime candidate，并标为 IMPLEMENTED_UNVALIDATED；
+10. 只有 G3 TARGET_HELD_OUT 在线结果通过，才升级公开标题和对应的效率/性能 claim state。
 
 这份规划的核心纪律是：
 
-> 先证明 shared L3 有价值，再证明 ADMIT_ALL 有浪费，再证明简单静态规则不够，最后才有资格实现价值感知准入。
+> 先证明 shared L3 可恢复且 trace 不干扰，再证明 forced admission 的生命周期正确；其后才证明 shared L3 有价值、ADMIT_ALL 有浪费、简单静态规则不够，最后才有资格实现价值感知准入。

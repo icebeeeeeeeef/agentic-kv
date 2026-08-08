@@ -3,6 +3,9 @@
 > 调查完成日期：2026-08-06
 > 总裁决：**G0-SOURCE BLOCKED**
 > 范围：`G0_PRELAUNCH_RESEARCH_CONTRACT.md` 的 R0–R6。本文是源码/发布物调查，不是 runtime 验证。
+> **D1 后续状态（2026-08-08）：**下述 R2/R3 的 `STOP` 只针对 adapter-visible terminal contract；
+> [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 已授权独立的
+> pre-collapse observation patch。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
 
 ## 结论
 
@@ -16,7 +19,7 @@ SGLang adapter Put/Get artifact。因此版本身份的源码调查通过，不�
 | R0 | INCONCLUSIVE | tag/full SHA、distribution version、官方 wheel digest | pinned adapter 初始化与真实 Put/Get 尚未运行 |
 | R1 | INCONCLUSIVE | TCP、external non-zero segment、worker zero segment 是 pinned upstream 支持路径 | 没有 A/B/C 部署、health/segment response |
 | R2 | STOP（state classification=FAIL） | adapter 的 exists-filter 与物理 object result 归约、Mooncake Put/Get 返回值语义 | Mooncake 将 `OBJECT_ALREADY_EXISTS` 归约为 Python `0`，race/existing 与真正新写在 adapter terminal 不可区分；同一 API 的 runtime 不能恢复该信息 |
-| R3 | STOP | `buffer_sizes` 与 object key 在 adapter 可见；`clear()` 调用 `remove_all()` | R2 使 `completed_new_put_bytes` 不可归因；禁止 payload-efficiency claim，且不能仅凭 `clear()` 比较 |
+| R3 | STOP（adapter-only） | `buffer_sizes` 与 object key 在 adapter 可见；`clear()` 调用 `remove_all()` | adapter-only 不能归因 `new_physical_put_bytes`；D1 observation 的 non-interference artifact 前禁止 payload-efficiency claim，且不能仅凭 `clear()` 比较 |
 | R4 | INCONCLUSIVE | first-miss lookup 与 storage-loaded-token 记账位置可审计 | 无 cold B、A Put、B Get、output join |
 | R5 | INCONCLUSIVE | `StorageOperation.id`、batch 切分、adapter object 边界提供最小传播点 | 未实现 trace patch，未做 disabled/enabled 等价运行 |
 | R6 | INCONCLUSIVE | L2 ack 后 seam、first-miss、ack/shutdown cleanup 是源码事实 | hook、hole、fail-open、DROP 与 drain artifact 均不存在 |
@@ -49,7 +52,7 @@ Mooncake 已兼容。
 2. Mooncake 的公开 contract 是 Put 每 object `0` 成功、负数错误；Get 每 object 返回
    成功读取字节数、负数错误。更重要的是，Mooncake 把 `OBJECT_ALREADY_EXISTS` 也归约为
    成功。故 precheck miss 后的 `0` 既可能是本 writer 新写，也可能是 race winner 已写；
-   adapter trace 无法恢复这一原因，不能将其计作 `completed_new_put_bytes`。
+   adapter trace 无法恢复这一原因，不能将其计作 `new_physical_put_bytes`。
    [SGLang result adapter](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py#L999-L1028)
    [Mooncake duplicate handling](https://github.com/kvcache-ai/Mooncake/blob/6041a609a8c3af35e778f70db344f145c2914980/mooncake-store/src/client_service.cpp#L1531-L1565)
    [batch reduction](https://github.com/kvcache-ai/Mooncake/blob/6041a609a8c3af35e778f70db344f145c2914980/mooncake-store/src/client_service.cpp#L2427-L2459)
@@ -69,10 +72,10 @@ Mooncake 已兼容。
 ## 接续条件
 
 下一位执行者必须从 R0 的 exact Linux GPU probe 开始，保存每个包要求的 `finding.md`、
-`evidence.md`、manifest、原始 stdout/stderr、配置与 checksum。R2/R3 不能靠补 runtime
-artifact 解除：必须先由用户裁决是否允许在 Mooncake 的 `OBJECT_ALREADY_EXISTS → success`
-归约**之前**增加独立 trace-only observation；否则 canonical plan 必须删除“new payload bytes”
-claim，而不是把模糊的 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
+`evidence.md`、manifest、原始 stdout/stderr、配置与 checksum。D1 已授权在 Mooncake 的
+`OBJECT_ALREADY_EXISTS → success` 归约**之前**增加独立 trace-only observation；只有该 patch 的
+focused test 与 trace-disabled/trace-enabled non-interference artifact 通过，R2/R3 的 new-payload
+分支才可重新评估。此前不得把模糊 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
 缺失 artifact。
 
 各包详情：
