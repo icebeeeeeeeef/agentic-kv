@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "vendor_upstream": false,
+  "materialized_patch_entry_fields": ["path", "sha256"],
+  "series": [
+    {
+      "id": "mooncake-d1-observation",
+      "execution_order": 1,
+      "state": "PLANNED",
+      "upstream": {
+        "name": "Mooncake",
+        "remote": "https://github.com/kvcache-ai/Mooncake.git",
+        "commit": "6041a609a8c3af35e778f70db344f145c2914980"
+      },
+      "patch_directory": "patches/series/mooncake-d1-observation",
+      "patches": [],
+      "expected_commit_subject": "trace: expose pre-collapse object Put terminal causes",
+      "purpose": "D1 trace-only raw terminal cause observation before OBJECT_ALREADY_EXISTS is reduced to success",
+      "apply_command": "git -C <checkout> am --3way --keep-cr <ordered patch files>",
+      "abort_command": "git -C <checkout> am --abort",
+      "focused_test": "Mooncake focused cause-record and trace-disabled/trace-enabled equivalence test, path pinned when implemented"
+    },
+    {
+      "id": "sglang-trace-correlation",
+      "execution_order": 2,
+      "state": "PLANNED",
+      "upstream": {
+        "name": "SGLang",
+        "remote": "https://github.com/sgl-project/sglang.git",
+        "commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6"
+      },
+      "patch_directory": "patches/series/sglang-trace-correlation",
+      "patches": [],
+      "expected_commit_subject": "trace: correlate storage operation batches without behavior change",
+      "purpose": "opaque observation-to-operation-to-batch/attempt-to-adapter-terminal correlation only",
+      "apply_command": "git -C <checkout> am --3way --keep-cr <ordered patch files>",
+      "abort_command": "git -C <checkout> am --abort",
+      "focused_test": "test/registered/unit/mem_cache/test_l3_trace_correlation.py"
+    },
+    {
+      "id": "sglang-l3-admission",
+      "execution_order": 3,
+      "state": "PLANNED",
+      "upstream": {
+        "name": "SGLang",
+        "remote": "https://github.com/sgl-project/sglang.git",
+        "commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6"
+      },
+      "patch_directory": "patches/series/sglang-l3-admission",
+      "patches": [],
+      "expected_commit_subject": "feat: add fail-open L3 admission seam",
+      "purpose": "post-L2-ack all-or-none ADMIT_TO_L3 or DROP seam with POLICY_ERROR_FAIL_OPEN",
+      "apply_command": "git -C <checkout> am --3way --keep-cr <ordered patch files>",
+      "abort_command": "git -C <checkout> am --abort",
+      "focused_test": "test/registered/unit/mem_cache/test_l3_admission_seam.py"
+    }
+  ]
+}

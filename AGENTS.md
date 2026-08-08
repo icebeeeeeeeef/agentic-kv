@@ -10,24 +10,26 @@
 任何新对话或 agent 在修改本仓库前，必须依次完整阅读：
 
 1. [README.md](README.md)
-2. [STATUS.md](STATUS.md)
-3. [PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md)
-4. [Documentation map](docs/README.md)
-5. 与当前任务直接相关的 implementation evidence、research evidence 或 historical review
+2. [PROJECT_EVALUATION_SOP.md](docs/project/PROJECT_EVALUATION_SOP.md)
+3. [STATUS.md](STATUS.md)
+4. [PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md)
+5. [Documentation map](docs/README.md)
+6. 与当前任务直接相关的 implementation evidence、research evidence 或 historical review
 
 不要用旧评审或 source material 覆盖 canonical plan。
 
 ## 权威顺序
 
-1. [PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md)：项目宪法、Gate、STOP 与实验合同
-2. [STATUS.md](STATUS.md)：实际完成状态
-3. [TASKS.md](TASKS.md)：用户明确授权的近期工作
-4. [docs/implementation](docs/implementation/)：固定版本源码与运行时证据
-5. [INTERVIEW_QA.md](docs/project/INTERVIEW_QA.md)：由上述证据派生的面试防守集合
-6. [JOB_MARKET_FIT.md](docs/research/JOB_MARKET_FIT.md) 与 [PROJECT_SELECTION_REVIEW.md](docs/research/PROJECT_SELECTION_REVIEW.md)
-7. research evidence、historical reviews 与 source material
+1. [PROJECT_EVALUATION_SOP.md](docs/project/PROJECT_EVALUATION_SOP.md)：选题、能力信号、证据、主张与叙事的方法论宪法
+2. [PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md)：当前项目的 Gate、STOP 与实验合同；方法论上必须服从 SOP
+3. [STATUS.md](STATUS.md)：实际完成状态
+4. [TASKS.md](TASKS.md)：用户明确授权的近期工作
+5. [docs/implementation](docs/implementation/)：固定版本源码与运行时证据
+6. [INTERVIEW_QA.md](docs/project/INTERVIEW_QA.md)：由上述证据派生的面试防守集合
+7. [JOB_MARKET_FIT.md](docs/research/JOB_MARKET_FIT.md) 与 [PROJECT_SELECTION_REVIEW.md](docs/research/PROJECT_SELECTION_REVIEW.md)
+8. research evidence、historical reviews 与 source material
 
-低层文件不得反向升级高层 claim state。任务清单和面试集合也不得修改项目宪法；若发现冲突，先停止并提出需要裁决的差异。
+低层文件不得反向升级高层 claim state。任务清单和面试集合也不得修改项目宪法；若发现冲突，先停止并提出需要裁决的差异。SOP 解决的是方法论冲突；STATUS 对实际运行、实现和验证状态保持事实权威，不能被任何计划或叙事文件改写。
 
 ## 工作方式
 

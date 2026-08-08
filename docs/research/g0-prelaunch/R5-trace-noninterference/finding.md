@@ -5,7 +5,7 @@ stock/trace run，不能宣称 deterministic correlation 或 non-interference。
 
 ## 最小 map
 
-在 decision seam 生成 `run_id`/`decision_id`；在 `StorageOperation.id` 建立关联；controller
+在 prospective seam 生成 `run_id`/`observation_id`；在 `StorageOperation.id` 建立关联；controller
 对每个 operation 的 batch ordinal 导出 `attempt_id`；adapter 在 preprocess、exists-filter、Put/Get
 raw result 后记录 logical/physical mapping。opaque ID 不得进入 keys、queue ordering、retry、
 dedup、Get 或 policy。

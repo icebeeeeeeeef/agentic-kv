@@ -112,8 +112,9 @@ Pinned SGLang README 已证明 TCP 与 external segment 是上游支持路径，
 
 ### 目标
 
-确定 adapter 可观测的真实 object 级写入语义，避免把“对象已存在”、并发竞争、部分成功和
-真正新写入混为 `completed Put`。
+确定真实 object 级写入语义，避免把“对象已存在”、并发竞争、部分成功和真正新写入混为一个
+模糊的 completed Put 指标。D1 已授权在 Mooncake 归约前补充只读 observation；该 patch 完成前，
+new-Put payload 仍不可报告。
 
 ### 必答问题
 
@@ -145,13 +146,13 @@ SGLang 已验证的 adapter 顺序是 exists 检查 → 过滤 → Put → logic
 
 ### 目标
 
-证明 G0 可以测量“确认完成的 Mooncake physical-object Put payload bytes”，并证明每个 run
+证明 G0 可以测量 `new_physical_put_bytes`（当前 writer 新建的 Mooncake physical-object payload），并证明每个 run
 不受上一次残留对象污染。
 
 ### 必答问题
 
 1. fixed adapter 在何处得到 logical hash、physical object key、pointer、`buffer_size`、exists 结果与 Put result？
-2. `completed_put_bytes` 应精确定义为哪些 physical object 的 `buffer_size` 之和？dedup、失败、Get bytes 是否分别记账？
+2. `new_physical_put_bytes` 应精确定义为哪些 physical object 的 `buffer_size` 之和？race-existing、exists-skip、失败、Get bytes 是否分别记账？
 3. 该定义与 logical KV bytes、NIC/wire bytes 的边界是什么？
 4. `MooncakeStore.clear()`、namespace、tenant/tag 或 Store restart 在 fixed version 中各自清除什么？怎样证明 fresh run？
 
@@ -159,7 +160,7 @@ SGLang 已验证的 adapter 顺序是 exists 检查 → 过滤 → Put → logic
 
 | 检查 | PASS | FAIL | INCONCLUSIVE / STOP |
 |---|---|---|---|
-| Byte reconciliation | 对每个 decision，logical page → physical object → terminal 一一可 join；成功新 Put 的 physical `buffer_size` 之和等于报告的 `completed_put_bytes`。 | unmatched object/byte、混合 logical/physical/wire 定义、dedup 被加为完成写入。 | backend 无 per-object terminal：`STOP` 任何 payload-efficiency claim。 |
+| Byte reconciliation | 对每个 decision，logical page → physical object → terminal 一一可 join；pre-collapse 确认新 Put 的 physical `buffer_size` 之和等于报告的 `new_physical_put_bytes`。 | unmatched object/byte、混合 logical/physical/wire 定义、dedup/race 被加为新写入。 | backend 无 per-object terminal：`STOP` 任何 payload-efficiency claim。 |
 | Get separation | Get、Put、dedup 与 failure 分别有字段和独立总计。 | 使用一个“bytes”字段混合读写。 | 缺少 Get terminal：`INCONCLUSIVE` restore payload 分析。 |
 | Run isolation | 每次 scenario 使用 fresh Store，或有 fixed-version source + before/after evidence 证明 namespace/cleanup 的等价隔离。 | 仅调用 `clear()` 且无语义/状态证据。 | 清理语义无法确认：`STOP` comparative run；采用 fresh Store/restart。 |
 
@@ -205,9 +206,11 @@ SGLang 已验证的 adapter 顺序是 exists 检查 → 过滤 → Put → logic
 在行为 hook 之前证明最小观测链可实现且不会改变 upstream path：
 
 ```text
-decision_id → StorageOperation operation_id → batch_ordinal / attempt_id
-            → adapter logical/physical object terminal
+observation_id → StorageOperation operation_id → batch_ordinal / attempt_id
+               → adapter logical/physical object terminal
 ```
+
+行为 hook 完成后才可在同一 record 追加 `decision_id`；R5 不计算或应用 admission action。
 
 ### 必答问题
 
@@ -251,7 +254,7 @@ decision_id → StorageOperation operation_id → batch_ordinal / attempt_id
 |---|---|---|---|
 | Prefix closure | 任一 group 首次 DROP 后无 admitted suffix；故意 hole 被决策边界拒绝；B lookup 在 first miss 停止。 | policy 产生不可达 admitted descendant，或通过新增 metadata/read path 修补。 | anchor/order 不可见：`STOP`，不做细粒度 policy。 |
 | Fail open | 人为抛出一次 policy exception，记录 `POLICY_ERROR_FAIL_OPEN` 后出现 upstream Put terminal 与正常 cleanup。 | 请求失败、意外 DROP、L2 受影响。 | exception terminal 无法观察：`INCONCLUSIVE`。 |
-| ALWAYS_DROP | L2 event/output 正确；无 `StorageOperation`、backup queue、`ongoing_backup`、host protection、Mooncake Put，完成 Put bytes 为 0。 | 任一 L3 mutation、ref/protection 变化或 L2 异常。 | 缺少任一状态证据：`INCONCLUSIVE`，不能由 aggregate metric 推零 Put。 |
+| ALWAYS_DROP | L2 event/output 正确；无 `StorageOperation`、backup queue、`ongoing_backup`、host protection、Mooncake Put，且 `admitted_payload_bytes = submitted_payload_bytes = 0`。 | 任一 L3 mutation、ref/protection 变化或 L2 异常。 | 缺少任一状态证据：`INCONCLUSIVE`，不能由 aggregate metric 推零 Put。 |
 | Async drain | delay/success/dedup/failure/shutdown 后 backup queue、ack queue、`ongoing_backup` 和 protection 均回基线且无 hang。 | leak、residual ref 或 hang。 | 只有 process exit 可见：`STOP` runtime policy experiments。 |
 
 ### 必交付物

@@ -4,6 +4,11 @@
 > 目标：2027 届国内 AI Infra / LLM Serving / 推理引擎相关校招  
 > 约束：单张 24GB 消费级 GPU，8–10 周业余时间  
 > 状态：本报告评审的是 `roadmap`，不是已经实现或测得收益的项目
+>
+> **历史范围警告（2026-08-08）：**本文保留早期 local prefix retention/eviction、FP8 与 offload 的
+> 对抗式审查及其反例；这些机制均不是当前项目主线。当前唯一 behavior-changing mechanism 是
+> [PROJECT_PLAN.md](../project/PROJECT_PLAN.md) 定义的 L2 ack 后 shared-L3 `ADMIT_TO_L3 | DROP`。
+> 本文只可用于理解为何收窄和哪些反例应保留，不能覆盖 canonical plan、STATUS 或 durable decisions。
 
 本裁决以用户给出的项目 SOP 为宪法层：它**不是学术 novelty 项目，也不是 PagedAttention/minivLLM 式特性复现**。成功标准是预算内回答一个有裁决权的坐标问题，并形成“自建仪器/源码级归因/机制级分析 + 可选的小改进”的真实工程闭环；prior art 是基线和边界坐标，不是需要回避的威胁。
 
