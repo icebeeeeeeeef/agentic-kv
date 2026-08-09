@@ -4,8 +4,9 @@
 > 总裁决：**G0-SOURCE BLOCKED**
 > 范围：`G0_PRELAUNCH_RESEARCH_CONTRACT.md` 的 R0–R6。本文是源码/发布物调查，不是 runtime 验证。
 > **D1 后续状态（2026-08-08）：**下述 R2/R3 的 `STOP` 只针对 adapter-visible terminal contract；
-> [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 已授权独立的
-> pre-collapse observation patch。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
+> [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 已固定独立的
+> pre-collapse observation 边界；[D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)
+> 进一步约束 stock pre-D1 ruling 后是否允许实际施工。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
 
 ## 结论
 
@@ -20,7 +21,7 @@ SGLang adapter Put/Get artifact。因此版本身份的源码调查通过，不�
 | R1 | INCONCLUSIVE | TCP、external non-zero segment、worker zero segment 是 pinned upstream 支持路径 | 没有 A/B/C 部署、health/segment response |
 | R2 | STOP（state classification=FAIL） | adapter 的 exists-filter 与物理 object result 归约、Mooncake Put/Get 返回值语义 | Mooncake 将 `OBJECT_ALREADY_EXISTS` 归约为 Python `0`，race/existing 与真正新写在 adapter terminal 不可区分；同一 API 的 runtime 不能恢复该信息 |
 | R3 | STOP（adapter-only） | `buffer_sizes` 与 object key 在 adapter 可见；`clear()` 调用 `remove_all()` | adapter-only 不能归因 `new_physical_put_bytes`；D1 observation 的 non-interference artifact 前禁止 payload-efficiency claim，且不能仅凭 `clear()` 比较 |
-| R4 | INCONCLUSIVE | first-miss lookup 与 storage-loaded-token 记账位置可审计 | 无 cold B、A Put、B Get、output join |
+| R4 | INCONCLUSIVE | first-miss lookup、storage-cached response breakdown 与 uncached-token 计算路径可审计 | 无 cold B、A Put、B Get、output join，也无相同请求的 B-cold no-L3 token control |
 | R5 | INCONCLUSIVE | `StorageOperation.id`、batch 切分、adapter object 边界提供最小传播点 | 未实现 trace patch，未做 disabled/enabled 等价运行 |
 | R6 | INCONCLUSIVE | L2 ack 后 seam、first-miss、ack/shutdown cleanup 是源码事实 | hook、hole、fail-open、DROP 与 drain artifact 均不存在 |
 
@@ -72,10 +73,10 @@ Mooncake 已兼容。
 ## 接续条件
 
 下一位执行者必须从 R0 的 exact Linux GPU probe 开始，保存每个包要求的 `finding.md`、
-`evidence.md`、manifest、原始 stdout/stderr、配置与 checksum。D1 已授权在 Mooncake 的
+`evidence.md`、manifest、原始 stdout/stderr、配置与 checksum。D1 已固定若进入 payload 归因时允许在 Mooncake 的
 `OBJECT_ALREADY_EXISTS → success` 归约**之前**增加独立 trace-only observation；只有该 patch 的
 focused test 与 trace-disabled/trace-enabled non-interference artifact 通过，R2/R3 的 new-payload
-分支才可重新评估。此前不得把模糊 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
+分支才可重新评估；实际施工还必须先满足 canonical pre-D1 ruling 与 D12。此前不得把模糊 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
 缺失 artifact。
 
 各包详情：

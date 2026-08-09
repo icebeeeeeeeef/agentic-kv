@@ -31,16 +31,17 @@ PASS 只能支持它实际覆盖的主张，不能自动升级完整 G0 或性�
 
 **Claim state：** `SOURCE_VERIFIED + ROADMAP`
 
-**短回答：** 不把策略收益作为工程完成前提。最低交付是独立的 trace-only correlation、pre-collapse
-payload observation、L2 ack 后的 fail-open seam、prefix closure 与 async terminal oracle；它们都在真实
+**短回答：** 通过 pre-D1 存活筛查并进入工程实现后，不把候选策略获胜作为工程完成前提。最低交付是独立的
+trace-only correlation、pre-collapse payload observation、L2 ack 后的 fail-open seam、prefix closure 与 async terminal oracle；它们都在真实
 SGLang→Mooncake 生命周期上，并要求 focused test、patch provenance 和 run artifact。当前这些 owned
 patch 尚未实现，因此不能说已经拥有 runtime 工程成果。
 
 **证据：** [runtime backbone contract](PROJECT_PLAN.md#32-三层完成定义)、
 [minimum ownership/deletion oracle](PROJECT_PLAN.md#34-工程最低交付与反向删除测试)。
 
-**反例与 trade-off：** 如果删除 benchmark 后只剩阈值函数，R 层即失败；解决办法不是增加 policy
-framework，而是完成已有生命周期与观测合同。
+**反例与 trade-off：** 如果项目已经通过投资筛查，但删除 benchmark 后只剩阈值函数，R 层即失败；解决办法
+不是增加 policy framework，而是完成已有生命周期与观测合同。若两个 stock sentinel 在有效坐标下均为 null，
+则按 D12 在 owned patch 前 STOP，不能为了凑 R 层继续施工。
 
 **不能声称：** “已经实现了分层 KV cache / Mooncake transfer”或“策略已带来收益”。
 
@@ -53,20 +54,126 @@ framework，而是完成已有生命周期与观测合同。
 `observation_id` 证明 trace-disabled/trace-enabled 行为等价，之后才允许写 `ALWAYS_*` hook。
 
 **证据：** [trace-first order](PROJECT_PLAN.md#212-唯一正确的下一动作顺序)、
-[trace-only acceptance](../implementation/G0_EXECUTION_PLAN.md#task-2-add-trace-only-correlation-and-prove-it-is-inert)。
+[trace-only acceptance](../implementation/G0_EXECUTION_PLAN.md#task-3-add-trace-only-correlation-and-prove-it-is-inert)。
 
 **反例与 trade-off：** trace 改变 key、队列、Put/Get result、输出或 cleanup 时，必须 STOP/revert trace
 patch；不能用 policy 绕过不可信 telemetry。
 
 **不能声称：** 目前没有 trace-disabled/enabled artifact，不能说关联链已经正确或无开销。
 
+### Q: 为什么成功的 remote Get 还不足以让 G0 通过？
+
+**Claim state：** `SOURCE_VERIFIED + ROADMAP`
+
+**短回答：** 成功 Put/Get 和输出一致只形成 `RESTORE_PATH_PASS`，证明 shared-L3 链路功能正确；项目还要求
+`REMOTE_VALUE_SURVIVES`：fresh B 的 `cached_tokens_details.storage` 非零，且相对相同请求的 B-cold no-L3
+control，实际 uncached/prefill tokens 更少。否则只是“搬了数据”，没有证明替代计算，不值得继续投入 admission
+hook。TTFT 在 G0 只作诊断，不能替代 token-level oracle，也不能形成性能 claim。
+
+**证据：** [cross-worker premise](PROJECT_PLAN.md#112-为什么必须双-worker)、
+[stock restore acceptance](../implementation/G0_EXECUTION_PLAN.md#task-1-establish-stock-external-store-recovery-and-prefill-survival)、
+[pinned token-accounting evidence](../research/g0-prelaunch/R4-runtime-attribution/evidence.md)。
+
+**反例与 trade-off：** restore 可能确实减少 prefill，但 TCP Get 使 TTFT 暂时不降；这仍允许继续验证机制，
+但必须在后续 G2a/G3 诚实检验净系统价值。反之，一次 TTFT 偶然降低但 prefill 未减少，不能救活项目。
+
+**不能声称：** 当前没有 Linux CUDA runtime artifact，两个 outcome 都仍是 ROADMAP，不能说 restore 已工作或
+已减少 prefill。
+
+### Q: L3 admission 为什么可能改善 Goodput？减少写入字节还不够吗？
+
+**Claim state：** `ROADMAP`
+
+**短回答：** 不够。在本项目的单一 action 下，性能收益只允许沿两条候选链解释：一是 DROP 低价值写入后，
+真实新 Put 与 backup queue/CPU/内存/NIC/Store 争用下降，最终改善 Goodput@TTFT-SLO；二是有限 L3 中的低价值
+竞争下降，使高价值 KV 在查询时更可用、useful Get 增加、computed prefill/recompute 减少，最终改善
+Goodput。G2a 只要求至少一条成立，但每条都必须同时具有各 arm 自身的运行时中介证据和 paired 端到端结果。
+
+**证据边界：** 链 A 必须闭合 decision → `new_physical_put_bytes` → queue/resource pressure →
+Goodput/TTFT；NIC/CPU 只是诊断。链 B 必须闭合 decision → query-time availability/useful Get → computed
+prefill/recompute → Goodput/TTFT；modeled occupancy 不能充当在线事实。当前两条链都没有实验数据。
+
+**反例与 trade-off：** 写成本被完全隐藏、容量宽松，或固定 remote eviction 已经有效保护高价值对象时，
+ADMIT_ALL 应最好或持平。反过来，“eviction 更晚决策”不自动证明它的信息更强，因此这是一项 losing condition，
+不是选择性准入必然冗余的先验结论。
+
+**不能声称：** 只有 new-Put payload 下降时只能声称 payload efficiency；不能声称缓解资源争用、改善容量
+可用性或提升 Goodput，也不能在缺少 SOURCE_VERIFIED telemetry 时声称观察到具体 occupancy、victim 或 eviction
+reason。
+
+### Q: 为什么不先把 D1 trace 和 hook 做完，再看有没有性能机会？
+
+**Claim state：** `SOURCE_VERIFIED + ROADMAP`
+
+**短回答：** D1 和 hook 是 admission-specific 投资，不应先于问题存在性。`REMOTE_VALUE_SURVIVES` 通过后，
+先用 stock 系统运行两个粗粒度 sentinel：zero-reuse、roomy L3、service-curve knee 下的
+`WRITE_COST_SENTINEL` 检查最坏浪费下的整条 L3 path cost 能否传导到前台；复用流 + one-shot fill 流、fresh roomy/small Store 下的
+`CAPACITY_PRESSURE_SENTINEL` 检查 bounded capacity 是否降低 query-time availability 并增加 prefill。至少一项
+留下稳定端到端信号，才自动继续 D1。
+
+执行前先做 treatment-blind preregistration：knee 只由 L2_ONLY service curve 选择，roomy/small 按冻结的 KV payload
+估算关系构造，并冻结 TTFT-SLO、物质性阈值、paired-run 区间方法和有限重复预算。`true` 要求区间下界越过阈值；有效
+`false` 要求区间上界低于阈值。三次重复或 p-value 不显著都不是 null oracle。
+
+**证据：** [pre-D1 investment contract](PROJECT_PLAN.md#d1-投资前的-stock-survival-sentinels)、
+[stock sentinel procedure](../implementation/G0_EXECUTION_PLAN.md#task-2-run-stock-pre-d1-investment-sentinels)。
+
+**反例与 trade-off：** backend 开/关同时改变 Put 与 lookup/miss，容量大小对照也看不到具体 eviction；因此
+`WRITE_COST_SENTINEL` 不能单独归因写成本，两个 sentinel 都只能筛查“有没有值得进一步归因的信号”，不能证明 admission 有效。两项都以区间排除规则成为有效 null 时才在 owned patch 前 STOP，且不满足 R/F；如果关键压力/公平条件不可证，或冻结预算后区间仍跨物质性阈值，只能记为 `INCONCLUSIVE`。不能把 runtime 工程量或“更深负结果”本身当作问题价值。
+
+**不能声称：** 当前尚无目标 Linux runtime artifact，不能说写争用或容量压力已经存在；D1 未完成前也不能把
+NIC 流量或 submitted bytes 称为 `new_physical_put_bytes` 或 payload-efficiency。
+
+### Q: 两个 stock sentinel 都是有效 null，为什么不继续把 runtime backbone 做完？
+
+**Decision state：** `DECIDED`（D12）
+
+**Claim state：** `ROADMAP`
+
+**短回答：** Runtime backbone 是“若要称为 runtime flagship 的最低工程线”，不是无条件施工承诺。两个
+sentinel 在预注册压力坐标下都以效应区间上界低于物质性阈值成为有效 null，说明当前 admission 的两条性能收益链都没有留下可行动投资信号；此时继续
+写 D1/hook 只为补工程量，会失去真实目标函数。项目按 D12 在 owned patch 前 STOP，保留 characterization 和
+方向筛查负结果，但不称为 R/F。
+
+**证据：** [D12 staged STOP](DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)、
+[completion boundary](PROJECT_PLAN.md#32-三层完成定义)。
+
+**反例与 trade-off：** 如果在 D1 结果未知时已经存在真实带宽/Store CPU/容量/成本或单位资源服务目标，owner
+可以先冻结资源预算与 new-Put/not-read 物质性判据，只授权 observation-only D1。只有 trace 证明物质性浪费后，
+才二次评审最小静态 hook；第一次例外不解锁 behavior，也不解锁 `VALUE_DENSITY`。
+
+**不能声称：** 双 null 是普适的“admission 无价值”，也不能把 pre-implementation STOP 包装成已完成的
+runtime flagship。没有区间排除能力的“不显著”结果不能叫双 null；没有新的 resource-objective record 时，当前例外并未被触发。
+
+### Q: 为什么不在 G1 就把 conditional ledger 做完，用它判断有没有策略机会？
+
+**Decision state：** `DECIDED`（D13）
+
+**Claim state：** `ROADMAP`
+
+**短回答：** G1 要证明的是“真实运行发生了什么能否被可信记录”，所以保留 workload replayability、在线
+trace/correlation、non-interference、payload reconciliation 和 workload split。conditional ledger 固定一条
+source-run eligibility stream 后离线回放其他 policy；真实 policy 会改变后续 L3 hit、L2 fill、recompute 和新的
+eligibility，因此 ledger 不能替 G2a 证明在线机会。只有 G2a 已用各 arm 自己的 lifecycle trace 证明 residual，才
+值得在 G2b 实现 ledger，拒绝动作差异太小或依赖错误模型的候选。
+
+**证据：** [D13](DECISIONS.md#d13--conditional-ledger-仅在-g2a-通过后实现)、
+[activation gate](PROJECT_PLAN.md#90-activation-gate)、[G2b contract](PROJECT_PLAN.md#g2bconditional-replay-rejection-filter)。
+
+**反例与 trade-off：** ledger 可以比在线候选实验便宜，但提前实现会把尚未证明存在的问题变成 simulator 工程，
+并诱导把条件式结果误写成因果结论。后移不删除 generator 或 trace 校验；它只删除 G1 中的多策略 replay、modeled
+resident state 和 future-aware upper bound。
+
+**不能声称：** 当前 ledger 尚未实现；即使将来 G2b 通过，也只能说候选“未被条件式拒绝”，不能说它已经在线
+优于 STATIC_FREQ* 或改善 TTFT/Goodput。
+
 ### Q: 你如何证明“减少写入”不是 dedup 或 two-writer race？
 
 **Claim state：** `SOURCE_VERIFIED + ROADMAP`
 
 **短回答：** adapter 的 `put_result=0` 会把真正新 Put 与 `OBJECT_ALREADY_EXISTS` race 合并为 success，
-不能作为新物理写入。D1 因此只授权在 Mooncake 归约前增加严格 trace-only observation；只有它的
-non-interference artifact 通过后，`new_physical_put_bytes` 才能用作 payload 分子。
+不能作为新物理写入。D1 因此只允许在 Mooncake 归约前使用严格 trace-only observation；实际施工还必须通过
+pre-D1 ruling。只有它的 non-interference artifact 通过后，`new_physical_put_bytes` 才能用作 payload 分子。
 
 **证据：** [D1](DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch)、
 [race limitation](../implementation/G0_SOURCE_RUNTIME_AUDIT.md#race-observation-limitation)。

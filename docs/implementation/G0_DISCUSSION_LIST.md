@@ -5,7 +5,7 @@
 > 路由：已由 owner 确认、会约束实现或 claim 的决议写入
 > [DECISIONS.md](../project/DECISIONS.md)；本文件只保留其讨论缘由，以及尚须由 source/runtime artifact 回答的实现问题。
 
-不要在本文重新选择 D1/D9/D10，也不要在此追加新的“决议”。项目宪法仍是
+不要在本文重新选择 D1/D9/D10/D12，也不要在此追加新的“决议”。项目宪法仍是
 [PROJECT_PLAN.md](../project/PROJECT_PLAN.md)，实际完成状态仍是
 [STATUS.md](../../STATUS.md)。本文不能单独升级 claim state、改变 Gate/STOP 或授权实现。
 
@@ -24,9 +24,10 @@
 
 | 原讨论号 | 当前状态 | 唯一决议入口 |
 |---|---|---|
-| D1 / D2 | 已决：保留 `new_physical_put_bytes`，授权严格 trace-only pre-collapse observation | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) |
+| D1 / D2 | 已决：保留 `new_physical_put_bytes`，固定严格 trace-only pre-collapse observation 边界；实际施工受 D12 约束 | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) |
 | D9 | 已决：complete prefix group all-or-none | [D9](../project/DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none) |
 | D10 | 已决：failure/async 合同严格，failure injector 不可得为 `INCONCLUSIVE` | [D10](../project/DECISIONS.md#d10--failureasync-合同保持严格不伪造覆盖) |
+| D12 | 已决：两个 stock sentinel 有效 null 时在实现前 STOP；payload/resource 例外先 observation、后证据裁决 hook | [D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权) |
 
 ## 历史依赖图（仅解释先后，不授权实现）
 
@@ -43,8 +44,11 @@ D3 目标 Linux/GPU 组合 → D4 stock A→B restore → D5 拓扑与隔离
                                       D10 cleanup/failure → D11 G0 exit ruling
 ```
 
-当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：stock restore → D1 observation →
-SGLang trace-only → behavior hook。`D6`–`D10` 只有 stock runtime prerequisite 通过后才能实施。
+当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：stock restore + prefill survival →
+stock pre-D1 investment sentinels → 条件性 D1 observation → SGLang trace-only → behavior hook。
+`D6`–`D10` 只有 stock runtime prerequisite 与 pre-D1 ruling 通过后才能实施；两个 sentinel 都是有效 null 时
+按 D12 在实现前 STOP，不满足 R/F，也不得为了展示工程量自动开发 D1。D12 的第一次 payload/resource 例外只允许
+observation-only D1/opaque correlation；它不能直接授权 D8 behavior hook。
 
 ## 尚待 artifact 回答的实现问题
 
@@ -66,12 +70,14 @@ wheel 分支 `STOP`，另开 source-build compatibility 子调查；不得把 so
 
 ### D4 — stock A Put → fresh B Get 的最小因果证明如何定义？
 
-**问题：**什么证据足以排除 B 的本地命中和静默重算？
+**问题：**什么证据足以排除 B 的本地命中、静默重算，以及“成功 Get 但没有替代 prefill”的假通过？
 
 **推荐：**A 完成 Put 后再启动一个从未处理该 prefix 的 B；B 的 L1/L2 配置不变、local segment 为
-零。一个 PASS 必须同时 join：A Put terminal、B 启动/冷态证据、B successful remote Get、B
-storage-loaded pages 和固定 decode output hash。B 输出正确但没有 remote Get 是 `INCONCLUSIVE`，
-不是 restore。
+零。先以 A Put terminal、B 启动/冷态证据、B successful remote Get、B storage-loaded pages 和固定
+decode output hash 证明 `RESTORE_PATH_PASS`；再用相同请求的独立 B-cold no-L3 control，证明
+`cached_tokens_details.storage > 0` 且 L3 arm 的 uncached/prefill tokens 更少，得到
+`REMOTE_VALUE_SURVIVES`。两者都成立才解锁后续；输出正确但没有 remote Get、或 Get 成功但未减少
+prefill，均不得当作 PASS。TTFT 在此只作诊断。
 
 **通过后解锁：**D5–D10。
 **停止条件：**用减小 L1/L2 容量、复制对象或 worker affinity 来制造“冷态”。
