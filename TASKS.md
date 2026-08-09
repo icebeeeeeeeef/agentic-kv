@@ -34,27 +34,27 @@
 
 ## Closed / STOP
 
-### T5 — 完成 G0 stock shared-L3 runtime 前提，或以 artifact STOP（STOP 2026-08-08）
+### T5 — 完成 G0 stock shared-L3 runtime 与 pre-D1 投资筛查，或以 artifact STOP（STOP 2026-08-08）
 
-- Scope：在目标 Linux GPU 环境固定 SGLang/Mooncake build identity，建立 external Store C，并证明 stock Worker A Put → fresh Worker B remote Get 的完整链路。
+- Scope：在目标 Linux GPU 环境固定 SGLang/Mooncake build identity，建立 external Store C，分别证明 stock Worker A Put → fresh Worker B remote Get 的 `RESTORE_PATH_PASS` 与 token-level `REMOTE_VALUE_SURVIVES`；随后在不打 patch 的前提下运行 `WRITE_COST_SENTINEL` 与 `CAPACITY_PRESSURE_SENTINEL`，决定是否值得自动投入 D1。
 - Depends on：T1、T4。
 - Outcome：当前 macOS/arm64 executor 无 NVIDIA GPU、Python 3.11、container runtime 或 pinned upstream checkout；在未启动任何 upstream 进程前 STOP。此结果不评价目标 Linux compatibility，也不允许进入 hook。
-- Resume：用户提供或切换到目标 Linux CUDA 环境后，重新执行完整 T5；不得复用本次 STOP 作为任何 build、Store 或 A→B 恢复结论。
+- Resume：用户提供或切换到目标 Linux CUDA 环境后，重新执行完整 T5；除 Put/Get、B 冷态与输出一致外，还必须用相同请求的 B-cold no-L3 control 证明 storage-cached tokens 非零且 uncached/prefill tokens 实际减少。只有该结果通过后，才按 G0 execution plan 先用 baseline/control 完成并 checksum 冻结 stock-sentinel preregistration，再运行 paired arms；至少一个信号的区间下界越过物质性阈值才自动解锁 T6。只有两项区间上界都低于阈值才是触发 D12 的有效双 null；任一关键压力/公平性条件不可证或区间在冻结预算后仍跨阈值时为 `INCONCLUSIVE`。不得复用本次 STOP 作为任何 build、Store、A→B 恢复、prefill survival 或 sentinel 结论。
 - Evidence：[tracked STOP record](docs/implementation/G0_T5_LOCAL_PREFLIGHT_STOP.md)、`experiments/runs/local-macos-arm64-preflight-20260808T093232Z/` immutable local bundle、STATUS 更新。
 
 ## Active
 
-### T6 — 实现并验证 trace-only PathTruth correlation（BLOCKED by T5 STOP）
+### T6 — 实现并验证 trace-only PathTruth correlation（BLOCKED by T5 STOP / pre-D1 ruling）
 
 - Scope：在不计算或应用 admission action 的前提下，实现 `observation → operation → batch/attempt → physical adapter result` 的 opaque ID propagation，并比较 stock、trace-disabled、trace-enabled 的行为等价性；T7 才在同一 trace record 追加 decision。
-- Depends on：T4、T5。
+- Depends on：T4、T5，且至少一个 stock pre-D1 sentinel 留下有效的稳定端到端信号；双 null 后只能由新的 owner-approved resource-objective record 依 D12 在 D1 结果未知时冻结真实资源目标、预算、物质性判据与有界 observation-only 计划，作为第一次例外授权。该授权只解锁 T6，不解锁 T7。
 - Completion：trace 不改变 key、队列顺序、Put/Get result、输出或 terminal cleanup；每个 observed upstream operation 可确定性关联到一个终态分类，且无 prompt/token 明文落盘。
 - Evidence：upstream focused tests、non-interference run bundle、JSONL schema 与 byte/reason-code contract。
 
 ### T7 — 实现最小 fail-open L3 admission seam 与运行时不变量
 
 - Scope：在 L2 ack 后、`write_storage` 前实现 `ALWAYS_ADMIT`、`ALWAYS_DROP`、`POLICY_ERROR_FAIL_OPEN`；采用 T1 冻结的 prefix-closure group 规则，并验证 async cleanup。
-- Depends on：T4、T5、T6。
+- Depends on：T4、T5、T6；正常 sentinel-positive 分支在 T6 通过后继续。双-null payload 例外分支还必须由 T6 artifact 证明超过预注册阈值且映射回资源目标的 new-Put/写后未读浪费，并取得第二次 owner ruling。
 - Completion：ALWAYS_ADMIT 与 stock path 功能等价；ALWAYS_DROP 保留 L2 且不创建 L3 operation/queue/protection/Put；fail-open 回落 upstream；closure、duplicate/race、delay、shutdown/detach 和 T1 适用的异常场景都有诚实的 PASS/FAIL/INCONCLUSIVE 结论。
 - Evidence：upstream focused tests、G0 matrix run bundles、queue/ref/protection terminal snapshots 和 STATUS/INTERVIEW_QA 更新。
 

@@ -34,7 +34,17 @@ its documented preconditions on a target Linux x86_64 CUDA environment with:
 3. two distinct GPU SGLang workers A/B and a separately observable external
    Store C using TCP; and
 4. retained configuration, process logs, health/segment response, cold-B
-   evidence, A Put/B Get join, storage-loaded evidence, and output equality.
+   evidence, A Put/B Get join, storage-loaded evidence, output equality, and an
+   identical B-cold no-L3 control proving non-zero storage-cached tokens reduce
+   uncached/prefill tokens; and
+5. only after that mechanism result passes, stock/no-patch
+   `WRITE_COST_SENTINEL` and `CAPACITY_PRESSURE_SENTINEL` runs with retained
+   baseline-only service-curve knee selection, a checksummed treatment-blind
+   preregistration, Store activity, actual roomy/small segment responses, paired
+   endpoint intervals, and explicit true/false/INCONCLUSIVE signal fields. A
+   true signal requires its interval lower bound above the frozen materiality
+   threshold; a valid false requires the upper bound below it. At least one true
+   signal is required to unlock T6 by default.
 
 The command and acceptance details remain canonical in
 [G0 execution plan](G0_EXECUTION_PLAN.md#ordered-implementation-and-acceptance-tasks).

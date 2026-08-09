@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "artifact_type": "g0_stock_sentinel_preregistration",
+  "contract_state": "DRAFT",
+  "frozen_at_utc": null,
+  "frozen_before_treatment_results": true,
+  "checksum_sidecar": "preregistration.json.sha256",
+  "identity": {
+    "repo_commit": null,
+    "sglang_commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
+    "mooncake_commit": "6041a609a8c3af35e778f70db344f145c2914980",
+    "mooncake_build_sha256": null,
+    "model_revision": null,
+    "tokenizer_revision": null,
+    "workload_hash": null,
+    "worker_assignment_hash": null
+  },
+  "common": {
+    "ttft_slo_ms": null,
+    "primary_endpoint": "goodput_at_ttft_slo",
+    "analysis_unit": "independent_paired_run",
+    "interval_sidedness": "one_sided",
+    "interval_method": null,
+    "confidence_level": null,
+    "materiality_delta_relative": null,
+    "minimum_paired_repeats": 3,
+    "maximum_paired_repeats": null,
+    "sequential_stopping_rule": "after_minimum_repeats_continue_until_interval_is_entirely_above_or_below_delta_or_maximum_repeats_is_reached",
+    "interval_method_valid_for_stopping_rule": null,
+    "fallback_when_not_sequentially_valid": "run_maximum_repeats_and_classify_once",
+    "arm_order_method": null,
+    "arm_order_seed": null,
+    "warmup_window": null,
+    "measurement_window": null,
+    "drain_window": null,
+    "fresh_store_method": null
+  },
+  "baseline_calibration": {
+    "allowed_results": [
+      "control_or_baseline_only"
+    ],
+    "l2_only_offered_load_grid": [],
+    "knee_selection_rule": null,
+    "selected_knee_offered_load": null,
+    "selected_low_load_sanity_cell": null,
+    "baseline_noise_artifact": null,
+    "treatment_results_observed_before_freeze": false
+  },
+  "capacity_coordinates": {
+    "kv_payload_estimation_method": null,
+    "kv_payload_estimation_inputs": {},
+    "reusable_set_bytes_estimate": null,
+    "one_shot_fill_bytes_estimate": null,
+    "full_distinct_set_bytes_estimate": null,
+    "small_segment_bytes": null,
+    "roomy_segment_bytes": null,
+    "roomy_safety_margin": null,
+    "required_relation": "reusable_set < small < reusable_set_plus_one_shot_fill_and_roomy > full_distinct_set_with_margin",
+    "runtime_segment_response_required": true,
+    "claim_boundary": "coordinates_do_not_prove_occupancy_victim_or_eviction"
+  },
+  "write_cost_sentinel": {
+    "control_arm": "L2_ONLY",
+    "treatment_arm": "L3_ENABLED",
+    "workload_contract": "page_aligned_zero_reuse_one_shot_with_roomy_l3",
+    "relative_degradation": "(goodput_l2_only - goodput_l3_enabled) / goodput_l2_only",
+    "required_prerequisites": [
+      "remote_value_survives",
+      "zero_reuse",
+      "roomy_capacity_coordinate",
+      "identifiable_store_activity",
+      "fair_paired_arms",
+      "positive_l2_only_goodput_denominator"
+    ],
+    "true_rule": "all_prerequisites_hold_and_one_sided_interval_lower_bound_exceeds_delta",
+    "false_rule": "all_prerequisites_hold_and_one_sided_interval_upper_bound_is_below_delta",
+    "inconclusive_rule": "a_prerequisite_is_unproven_or_interval_crosses_delta_at_maximum_repeats"
+  },
+  "capacity_pressure_sentinel": {
+    "control_arm": "ROOMY_STORE",
+    "treatment_arm": "SMALL_STORE",
+    "workload_contract": "fixed_reusable_long_prefix_stream_plus_one_shot_fill_stream",
+    "relative_degradation": "(goodput_roomy - goodput_small) / goodput_roomy",
+    "required_prerequisites": [
+      "remote_value_survives",
+      "actual_roomy_and_small_segments_match_contract",
+      "intended_fill_pressure_coordinate",
+      "same_reuse_source",
+      "fair_paired_arms",
+      "positive_roomy_goodput_denominator"
+    ],
+    "required_mediator_directions_for_true": [
+      "small_has_lower_query_time_storage_availability_or_useful_get",
+      "small_has_higher_uncached_or_prefill_tokens"
+    ],
+    "true_rule": "all_prerequisites_and_mediator_directions_hold_and_one_sided_interval_lower_bound_exceeds_delta",
+    "false_rule": "all_prerequisites_hold_and_one_sided_interval_upper_bound_is_below_delta",
+    "inconclusive_rule": "a_prerequisite_is_unproven_or_interval_crosses_delta_at_maximum_repeats"
+  },
+  "decision_rule": {
+    "continue_to_d1": "at_least_one_signal_is_true",
+    "pre_implementation_stop": "both_signals_are_valid_false",
+    "cannot_decide": "either_signal_is_inconclusive",
+    "non_significant_p_value_is_valid_false": false,
+    "minimum_repeat_count_alone_is_valid_false": false
+  },
+  "supersession": {
+    "changes_require_new_version": true,
+    "fields_that_cannot_change_after_freeze": [
+      "workload",
+      "offered_load",
+      "knee",
+      "capacity_coordinates",
+      "ttft_slo",
+      "materiality_delta",
+      "interval_method",
+      "repeat_budget",
+      "arm_order"
+    ],
+    "prior_artifact_to_retain": null,
+    "change_reason": null
+  }
+}

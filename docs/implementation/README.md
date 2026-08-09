@@ -11,7 +11,7 @@ open decisions, and runtime artifacts. None of them may upgrade claim state by t
 - [upstream patch provenance](../../patches/README.md): repository-owned ordered patch-series
   contract for external checkouts; current entries are `PLANNED`, not implemented patches.
 - [G0 decision discussion list](G0_DISCUSSION_LIST.md): historical discussion prompts and
-  unresolved implementation questions; D1/D9/D10 are resolved and link to the durable
+  unresolved implementation questions; D1/D9/D10/D12/D13 are resolved and link to the durable
   [decision record](../project/DECISIONS.md). It is not runtime evidence or current authority.
 
 Do not copy planning statements here as if they were completed work. Runtime validation

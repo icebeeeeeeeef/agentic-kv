@@ -1,6 +1,6 @@
 # G0 Source and Runtime Audit
 
-> Audit date: 2026-08-05
+> Audit date: 2026-08-05; restore-value accounting addendum: 2026-08-09
 > Verdict: **G0-SOURCE BLOCKED**
 > Scope: fixed SGLang source seam and the minimum Mooncake runtime contract. This is not a runtime result.
 
@@ -13,6 +13,7 @@ The exact Mooncake release candidate is identifiable, but that SGLang commit nei
 | State | Item |
 |---|---|
 | SOURCE_VERIFIED | The narrow L2-ack-to-L3 seam, its queue/protection consequences, prefix first-miss behavior, and adapter object expansion described below. |
+| SOURCE_VERIFIED | Stock SGLang propagates tokens actually loaded from L3 into per-request storage-cached accounting, can expose that source in response metadata, and defines uncached prompt tokens as prompt minus cached tokens. This is an available G0 oracle, not runtime proof that the target deployment survives. |
 | SOURCE_VERIFIED | Mooncake release candidate `v0.3.12.post1`, release commit prefix `6041a60`, released 2026-07-25, and its CPython 3.11 x86_64 wheel SHA-256 `8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439`. [Official release](https://github.com/kvcache-ai/Mooncake/releases/tag/v0.3.12.post1) |
 | Inference | `v0.3.12.post1` is the best first candidate: it predates the pinned SGLang commit and exposes the APIs the adapter imports/calls. This is not an adapter compatibility proof. |
 | SOURCE_VERIFIED | The release tag resolves to `6041a609a8c3af35e778f70db344f145c2914980`; the official CPython 3.11 Linux x86_64 wheel digest is recorded above. [Official commit](https://github.com/kvcache-ai/Mooncake/commit/6041a609a8c3af35e778f70db344f145c2914980) |
@@ -44,6 +45,16 @@ That ordering is SOURCE_VERIFIED to preserve completed L2 write-through: the CPU
 ### Legal online signals at the seam
 
 SOURCE_VERIFIED availability is limited to the current node/chain data: `node.hit_count`, node and concatenated key length, page-aligned logical hashes, parent/ancestor relationship, L2 host indices, and optional prefix hash list. The precise physical `buffer_sizes` do not exist until the adapter's `_batch_preprocess`; use only a previously calibrated estimate online. Future demand, future Get result, later queue outcome, and later Mooncake availability are not legal policy inputs.
+
+### Restore-value accounting
+
+This accounting is an observation after restore, not a legal admission input:
+
+- after prefetch completes, HiRadixCache records tokens actually loaded from storage as `min_completed_tokens - matched_length`; [hiradix_cache.py#L1644-L1704](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/hiradix_cache.py#L1644-L1704)
+- the scheduler moves that value to the request before the next scheduling round, and request accounting classifies the corresponding cached prefix as storage-sourced; [scheduler.py#L3164-L3175](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/managers/scheduler.py#L3164-L3175), [schedule_batch.py#L2386-L2416](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/managers/schedule_batch.py#L2386-L2416)
+- the output path can expose the storage breakdown as `cached_tokens_details.storage`, while finished-request metrics define uncached prompt tokens as `prompt_tokens - cached_tokens`. [output_streamer.py#L70-L100](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/managers/scheduler_components/output_streamer.py#L70-L100), [metrics_collector.py#L1693-L1700](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/observability/metrics_collector.py#L1693-L1700)
+
+Therefore G0 can distinguish a functionally correct restore path from non-zero prefill substitution without a new observation patch. It still needs a real B-cold L3 run and an identical B-cold no-L3 control; source availability alone is not `REMOTE_VALUE_SURVIVES`, and TTFT alone cannot replace this token-level oracle.
 
 ## Prefix closure and first miss
 
@@ -79,9 +90,10 @@ that race cause after the Mooncake boundary. Under the current observation contr
 `R2 state classification = FAIL` and `R2/R3 new-payload attribution = STOP`; do not call
 the sum of `put_result=0` `buffer_sizes` `completed_new_put_bytes`. The project owner has
 accepted [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch): an independent,
-pre-collapse Mooncake trace-only observation patch is authorized, but not yet implemented or
+pre-collapse Mooncake trace-only observation boundary is defined, but not yet implemented or
 validated. Until its non-interference proof exists, the STOP remains. This does not invalidate
-restore or the L3 admission seam.
+restore or the L3 admission seam. D1 defines the observation boundary; [D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)
+now separately gates whether the patch may be implemented after the stock pre-D1 ruling.
 
 The minimum **trace-only** propagation is:
 
@@ -114,5 +126,7 @@ the exported files, hashes, focused-test result, and fresh-worktree apply verifi
 ## Runtime configuration facts
 
 The pinned SGLang README documents a source build, external master/metadata/store roles, `tcp` as a supported protocol, an external store's non-zero `global_segment_size`, and SGLang workers using `global_segment_size=0` when an external store exists. [README#L34-L78](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L34-L78), [README#L116-L183](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L116-L183), [README#L249-L253](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L249-L253). The pinned registered test also configures `MOONCAKE_PROTOCOL=tcp`, blank device, metadata URL, and a global segment. [test_hicache_storage_mooncake_backend.py#L195-L211](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/test/registered/hicache/test_hicache_storage_mooncake_backend.py#L195-L211)
+
+This source evidence supports the external non-zero segment configuration shape, but it does not prove that two arbitrary roomy/small values take effect in the unresolved target build or that capacity can be changed in place. The pre-D1 capacity sentinel must therefore start a fresh Store for each value and retain that Store's runtime health/segment response; otherwise its capacity axis is `INCONCLUSIVE`.
 
 No runtime deployment, hook, trace field, candidate policy, payload reconciliation, or performance result exists in this repository. In particular, this audit must not be upgraded to `G0-RUNTIME VALIDATED`.

@@ -1,6 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "artifact_type": "run_manifest",
   "claim_state": "ROADMAP",
+  "gate_outcome": null,
+  "reason_code": null,
+  "preregistration_sha256": null,
   "repo_commit": null,
   "sglang_commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
   "mooncake_commit": null,
@@ -30,6 +34,16 @@
   "run": {
     "order": null,
     "repeat": 0,
-    "reset_method": null
+    "reset_method": null,
+    "warmup_window": null,
+    "measurement_window": null,
+    "drain_window": null
+  },
+  "sentinel_result": {
+    "name": null,
+    "signal": null,
+    "interval_lower_bound": null,
+    "interval_upper_bound": null,
+    "materiality_delta": null
   }
 }

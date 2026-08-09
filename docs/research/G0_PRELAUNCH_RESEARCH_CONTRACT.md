@@ -113,8 +113,9 @@ Pinned SGLang README 已证明 TCP 与 external segment 是上游支持路径，
 ### 目标
 
 确定真实 object 级写入语义，避免把“对象已存在”、并发竞争、部分成功和真正新写入混为一个
-模糊的 completed Put 指标。D1 已授权在 Mooncake 归约前补充只读 observation；该 patch 完成前，
-new-Put payload 仍不可报告。
+模糊的 completed Put 指标。D1 已固定若进入 payload 归因时唯一允许的 Mooncake pre-collapse 只读
+observation；是否实际施工还受 canonical pre-D1 ruling 与 D12 约束。该 patch 完成前，new-Put payload
+仍不可报告。
 
 ### 必答问题
 
@@ -174,29 +175,30 @@ SGLang 已验证的 adapter 顺序是 exists 检查 → 过滤 → Put → logic
 
 ### 目标
 
-让 “A Put → fresh B Get” 是可证伪的因果链，而不是 B 输出正确或 cache hit 计数上升的间接猜测。
+让 “A Put → fresh B Get → non-zero prefill substitution” 是可证伪的因果链，而不是 B 输出正确、
+成功 Get 或 cache hit 计数上升的间接猜测。
 
 ### 必答问题
 
 1. 目标 dense model 是否支持 pinned SGLang HiCache Mooncake path，且 A/B 的 model/tokenizer revision/hash 是否可固定？
 2. 从启动输出和配置中如何确认 `HiRadixCache` 被选中、Unified Radix Tree 关闭、TP=PP=DP=DCP=1、page size/L1/L2 固定？
 3. B 在 probe 前如何证明 local-cold？禁止通过改动 L1/L2 容量或配置实现冷态。
-4. 请求 token/hash、A Put、B Get、B storage-loaded pages、输出 hash 如何形成同一 run 的确定性关联？
-5. 若 B 成功输出但无 successful remote Get，如何区分重算和本地命中？
+4. 请求 token/hash、A Put、B Get、B storage-loaded pages、storage-cached token breakdown、输出 hash 如何形成同一 run 的确定性关联？
+5. 如何用相同请求的独立 B-cold no-L3 control 证明 L3 arm 实际减少 uncached/prefill tokens？若 B 成功输出但无 successful remote Get，如何区分重算和本地命中？
 
 ### 通过标准
 
 | 检查 | PASS | FAIL | INCONCLUSIVE / STOP |
 |---|---|---|---|
 | Fixed runtime | A/B 的 model、tokenizer、cache config、transport、backend tag/tenant 相同且记录；启动日志确认 HiRadix。 | fallback cache、hybrid model、不同 tokenizer/model/config，或用不同 L1/L2 实现作实验变量。 | 启动日志不足：`INCONCLUSIVE`，补 source/config audit 后再运行。 |
-| Cold restore proof | A completed Put、B successful remote Get、B storage-loaded pages、B local-cold evidence 和输出 equality 全部可关联。 | B 无 remote Get 而重算，或 B 已热。 | 缺任一证据：`INCONCLUSIVE`，不得称 shared-L3 restore。 |
-| Restore value boundary | 仅在上述链条成立后测 prefill/TTFT；若 remote restore 在目标条件下不改善任何 prefill，记录负结果。 | 用 output equality 替代 restore 证据。 | 配置或负载不可重复：`STOP` G0 runtime matrix。 |
+| `RESTORE_PATH_PASS` | A completed Put、B successful remote Get、B storage-loaded pages、B local-cold evidence 和输出 equality 全部可关联。 | B 无 remote Get 而重算，B 已热，或输出不同。 | 缺任一证据：`INCONCLUSIVE`，不得称 shared-L3 restore。 |
+| `REMOTE_VALUE_SURVIVES` | 前一行已通过，`cached_tokens_details.storage > 0`，且 L3 arm 的 uncached/prefill tokens 少于相同请求的独立 B-cold no-L3 control。 | Get 成功但不减少任何 uncached/prefill tokens；按 G0 STOP，不以 TTFT 偶然变化挽救。 | cache-source breakdown、token count 或公平 control 不可得：`INCONCLUSIVE`，不得进入 D1/trace/hook。 |
 
 ### 必交付物
 
 - A/B launch commands、startup logs、model/tokenizer hashes、完整 fixed cache config；
 - cold-state procedure 和证据；
-- 一个 stock（无 patch）A→B exact-prefix trace，含 Put/Get/output joins；
+- 一个 stock（无 patch）A→B exact-prefix trace，含 Put/Get/output joins、cache-source breakdown，以及相同请求 B-cold no-L3 control 的 token accounting；
 - 对失败时的明确归因：`local hit`、`recompute`、`remote unavailable` 或 `unobservable`。
 
 ## 8. 调查包 R5：trace-only 传播与行为不干扰性
@@ -271,7 +273,7 @@ observation_id → StorageOperation operation_id → batch_ordinal / attempt_id
 | R0 FAIL / STOP | 保持 `G0-SOURCE BLOCKED`，记录候选不兼容。 | 不换“最新版”继续宣称同一 pin。 |
 | R1 FAIL / STOP | 收口为部署不可用或环境不满足。 | 不改为 RDMA/GDR/NIXL、同进程伪双 worker 或 worker-local L3。 |
 | R2 或 R3 STOP | 保留 restore/correctness 调查；停止 payload-efficiency / byte claim。 | 不用 aggregate 指标或 simulator 补齐 physical payload。 |
-| R4 PASS | 先做 R5 trace-only。 | 不把 stock restore 直接当作 policy 效果。 |
+| R4 PASS | 先按 canonical G0 plan 运行 stock/no-patch `WRITE_COST_SENTINEL` 与 `CAPACITY_PRESSURE_SENTINEL`；至少一项有稳定端到端信号才自动做 R5 trace-only。双 null 后仅有符合 D12、在 D1 结果未知时冻结真实资源目标/预算/物质性判据的第一次 owner 例外可解锁 observation-only R5。 | 不把 stock restore 或粗粒度 sentinel 直接当作 policy 效果；两个 sentinel 都是有效 null 时在 owned patch 前 STOP，不满足 R/F，第一次例外也不授权 behavior hook。 |
 | R5 PASS | 实现最小 fail-open binary hook，并执行 R6。 | 不建设通用 policy framework。 |
 | R6 PASS | 运行 G0 matrix：ALWAYS_ADMIT、ALWAYS_DROP、closure、bytes、race/failure、cleanup。 | 不实现 VALUE_DENSITY 或启动 G2/G3。 |
 

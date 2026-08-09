@@ -10,14 +10,22 @@
 - 阶段：仓库初始化完成，G0 尚未开始
 - 已实现代码：仅仓库 smoke skeleton
 - Mooncake source：`v0.3.12.post1` candidate（commit `6041a609a8c3af35e778f70db344f145c2914980`）已 SOURCE_VERIFIED；目标 Linux build/API 与 pinned SGLang adapter 的 runtime compatibility 仍未验证
-- 未验证：跨 worker shared-L3 restore、D1 trace-only observation、SGLang trace correlation、L3 admission hook、候选策略及任何性能收益
+- 未验证：跨 worker shared-L3 restore、该 restore 是否实际减少 prefill、D1 trace-only observation、SGLang trace correlation、L3 admission hook、候选策略及任何性能收益
 
 不要把 ROADMAP、SOURCE_VERIFIED、IMPLEMENTED_UNVALIDATED 与 EXPERIMENTALLY_VALIDATED 混为一谈。
 
-项目的工程完成不等于“VALUE_DENSITY 获胜”：先完成可独立审查的 runtime backbone（trace-only
+项目若通过前置存活筛查并继续到工程实现，其完成也不等于“VALUE_DENSITY 获胜”：先完成可独立审查的 runtime backbone（trace-only
 non-interference、最小 fail-open hook、closure/lifecycle oracle），再形成可接受负结果的旗舰证据闭环；
-VALUE_DENSITY 只有在 G2a 后才是可选候选。执行顺序固定为 stock restore → D1 observation →
-SGLang trace-only → behavior hook，详见 [PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md#32-三层完成定义)。
+VALUE_DENSITY 只有在 G2a 后才是可选候选。执行顺序固定为 stock restore path + prefill survival → 两个 stock、
+无补丁的 pre-D1 survival sentinel → 条件性投入 D1 observation → SGLang trace-only → behavior hook；若两个
+sentinel 在有效压力坐标下都以预注册区间排除了超过物质性阈值的端到端信号，才在 owned patch 前 STOP；仅仅
+“未检出显著差异”只能是 `INCONCLUSIVE`，不能为了展示工程量自动开发 D1；该
+方向筛查负结果不算 runtime backbone 或 flagship closure。只有 owner 预先冻结真实 payload/resource 目标后，
+才可分两级授权 observation-only D1 与后续最小 hook，详见
+[PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md#d1-投资前的-stock-survival-sentinels)。
+
+Conditional admission ledger 不属于 G1 或 runtime backbone：只有 G2a 用各 arm 自身的在线 trace 证明可行动
+residual 后，才在 G2b 实现它并用于候选拒绝；G3 在线 A/B 保留最终因果裁决权。
 
 ## 唯一权威入口
 
