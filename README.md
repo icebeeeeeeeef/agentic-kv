@@ -2,7 +2,9 @@
 
 面向 AI Infra / KV Cache 团队的个人工程项目：
 
-> 在 SGLang HiCache + Mooncake shared L3 上，固定 L1/L2 的算法、容量、配置与 write policy，只研究一个行为变化：完成 L1 → L2 备份后，当前 prefix-closed KV group 是否继续写入共享 L3。
+> 在 SGLang HiCache + Mooncake shared L3 上，固定 L1/L2 的算法、容量、配置与 write policy，只研究一个行为变化：完成 L1 → L2 备份后，当前 prefix-closed、speculative KV group 是否继续**发布**到共享 L3。
+
+项目正式术语为 **Shared-L3 Publication Admission**。它只处理 speculative/opportunistic publication：`L2 ack → prefix closure → ADMIT_TO_L3 | DROP → (only ADMIT) StorageOperation / Mooncake Put`。`DROP` 位于 `StorageOperation` 前，因而不拥有异步 L3 state。HiCache/Mooncake 是 upstream substrate；SGLang Agentic KV 若未来提供明确 intent，只是 complement/workload producer，当前 mainline 的 intent-coupled set 为空，未来不得静默 DROP。
 
 ## 当前状态
 
@@ -14,29 +16,29 @@
 
 不要把 ROADMAP、SOURCE_VERIFIED、IMPLEMENTED_UNVALIDATED 与 EXPERIMENTALLY_VALIDATED 混为一谈。
 
-项目若通过前置存活筛查并继续到工程实现，其完成也不等于“VALUE_DENSITY 获胜”：先完成可独立审查的 runtime backbone（trace-only
-non-interference、最小 fail-open hook、closure/lifecycle oracle），再形成可接受负结果的旗舰证据闭环；
-VALUE_DENSITY 只有在 G2a 后才是可选候选。执行顺序固定为 stock restore path + prefill survival → 两个 stock、
-无补丁的 pre-D1 survival sentinel → 条件性投入 D1 observation → SGLang trace-only → behavior hook；若两个
-sentinel 在有效压力坐标下都以预注册区间排除了超过物质性阈值的端到端信号，才在 owned patch 前 STOP；仅仅
-“未检出显著差异”只能是 `INCONCLUSIVE`，不能为了展示工程量自动开发 D1；该
-方向筛查负结果不算 runtime backbone 或 flagship closure。只有 owner 预先冻结真实 payload/resource 目标后，
-才可分两级授权 observation-only D1 与后续最小 hook，详见
-[PROJECT_PLAN.md](docs/project/PROJECT_PLAN.md#d1-投资前的-stock-survival-sentinels)。
+首次目标环境执行服从 D18 的 correctness-only 入口：租机前只物化内容寻址输入和一次性 C0 runbook/raw-evidence
+handoff；租机后才核验 build/API/write threshold/GPU/Store/private TCP，并立即运行 stock A → external C → fresh B
+及 no-L3 control。OCI/OSS、自动 classifier/finalizer、双物理 GPU与同 AZ 都不是首次 C0 correctness Gate；入口失败
+只记 `BLOCKED_BEFORE_C0`，不得伪造 shared-L3 `FAIL/STOP`。C0 `PASS` 后 C1 仍须 fresh cohort 重做 C0。
+
+当前先执行 D14 的替代攻击：`S1 RESTORE_VALUE_REGION` 是一票否决；随后在 sticky-reuse（**待对 pin 复核**的 stock selective 放行条件成立、却低 remote reuse value）上运行 `S2 PUBLICATION_COST_ENVELOPE` 与 `S3 CAPACITY_EXTERNALITY`。one-shot/unique-heavy 只作为 stock frontier X* 预期能过滤的负控制，不能承重独立 L3-only gate 的价值。X* = stock `write_through_selective` + sufficient L2 + 经 source/runtime 证明可用的 stock quota/eviction controls；它虽不是相同 L2 treatment 的因果基线，却是必须正面击败的简单替代。离线 replay 不得推断 TTFT/Goodput；只有真实 online cheating oracle 也无法物质性击败 X* 时，才以 STOP 收口。
+
+当前 brainstorm 冻结：不提前设计 Agent hints、`VALUE_DENSITY`、stale-publication、page-level admission、router 或 eviction。只有后续在线 residual 与新的 owner decision 才可重开。外部讨论中尚未对本仓库 pins 独立核验的 upstream 动态统一记为 `RESEARCH_REVIEW / SOURCE_TO_REVERIFY`，不是新的 claim state，不能升级为 `SOURCE_VERIFIED` 或 `EXPERIMENTALLY_VALIDATED`。
 
 Conditional admission ledger 不属于 G1 或 runtime backbone：只有 G2a 用各 arm 自身的在线 trace 证明可行动
-residual 后，才在 G2b 实现它并用于候选拒绝；G3 在线 A/B 保留最终因果裁决权。
+residual，且 online oracle-vs-X* 未停止方向后，才在 G2b 实现它并用于候选拒绝；它不默认实现 `VALUE_DENSITY`，G3 在线 A/B 保留最终因果裁决权。
 
 ## 唯一权威入口
 
 1. docs/project/PROJECT_EVALUATION_SOP.md：稳定的方法论；约束选题、能力信号、证据、主张与叙事
 2. docs/project/PROJECT_PLAN.md：将 SOP 落实为本项目的问题、边界、Gate、STOP 与实验合同
 3. STATUS.md：当前实际完成状态和下一步
-4. docs/project/DECISIONS.md：已由 owner 确认、会约束实现或 claim 的 durable 决议
-5. docs/README.md：文档权威层级与阅读顺序
-6. AGENTS.md：在本仓库工作的行为约束
-7. TASKS.md：仅记录用户明确授权的近期任务
-8. docs/project/INTERVIEW_QA.md：由当前证据派生的面试防守集合
+4. TASKS.md：仅记录用户明确授权的近期任务；不能改写上位 Gate/STOP
+5. docs/implementation/：固定源码事实、实验合同与 runtime artifacts；低层合同不能改写上位 Gate/STOP
+6. docs/project/DECISIONS.md：owner 已决约束；`DECIDED` 不是 runtime evidence
+7. docs/README.md：文档地图与 claim-state 词典
+8. AGENTS.md：在本仓库工作的行为约束
+9. docs/project/INTERVIEW_QA.md：由当前证据派生的面试防守集合
 
 若项目选择、证据标准或叙事方法与 SOP 冲突，以 SOP 为准并修订项目计划；若 PROJECT_PLAN.md 描述计划、STATUS.md 描述实际进度，以 STATUS.md 的完成状态为准。研究评审材料不能反向覆盖上述文档。
 

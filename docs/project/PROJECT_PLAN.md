@@ -1,7 +1,7 @@
-# 多轮 Agent 负载下共享 KV Pool 的 L3 写入准入
+# Shared-L3 Publication Admission：多轮 Agent 负载下共享 KV Pool 的 L3 发布准入
 
 > 文档性质：项目总体规划、证据合同与统一口径  
-> 统一版本：2026-08-09
+> 统一版本：2026-08-10
 > 当前裁决：**Conditional Select（有条件立项）**  
 > 当前 claim state：SGLang 接缝及 Mooncake `v0.3.12.post1` candidate source 为 SOURCE_VERIFIED；其 runtime compatibility 仍 UNRESOLVED。负载、探针、conditional ledger、hook 与策略均仍是 ROADMAP，尚无 IMPLEMENTED_UNVALIDATED 或 EXPERIMENTALLY_VALIDATED 的个人产出
 > 本版不做时间排期。所有阶段按证据依赖排序，不按周数排序。
@@ -16,29 +16,29 @@
 
 **规划期标题：**
 
-> 多轮 Agent 负载下共享 KV Pool 的 L3 写入准入边界与策略评估
+> 多轮 Agent 负载下 Shared-L3 Publication Admission 的边界与策略评估
 
 **只有通过 G3 的预注册 TARGET_HELD_OUT 在线正结果后，公开标题才升级为：**
 
-> 多轮 Agent 负载下共享 KV Pool 的价值感知写入准入
+> 多轮 Agent 负载下 Shared-L3 Publication Admission 的价值感知发布准入
 
-G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不能升级公开标题。项目最终可以得到性能正结果、仅流量/容量效率正结果，也可以得到“静态 second-hit 已经足够”的负结果。
+G2 机会闸门与 O1-vs-X* 均未停止方向后，也只允许提出新的最小 candidate decision，不能自动升级公开标题。项目最终可以得到性能正结果、仅流量/容量效率正结果，也可以得到“静态规则或 X* 已足够”的负结果。
 
 ### 0.2 一句话定义
 
 在 SGLang HiCache + Mooncake shared L3 上，固定 L1/L2 的算法、容量、配置与 write policy，同时固定路由、远端淘汰和传输实现，只拥有一个在线决策：
 
-> 一个已经完成 L1 → L2 备份的、满足前缀闭包的 KV 段，是否继续写入共享 L3：ADMIT_TO_L3 或 DROP。
+> 一个已经完成 L1 → L2 备份、满足前缀闭包、且属于 speculative / opportunistic publication 的 KV 段，是否继续发布到共享 L3：ADMIT_TO_L3 或 DROP。
 
-多轮 Agent Prefix-DAG 负载生成器、KV evidence correlator / lifecycle trace collector 和 A/B runner 是回答这个问题的必需自建仪器。conditional admission ledger 只是 G2a 通过后才允许实现的候选拒绝工具，不是 G1、Runtime backbone 或 Flagship evidence closure 的默认交付物。
+多轮 Agent Prefix-DAG 负载生成器、KV evidence correlator / lifecycle trace collector 和 A/B runner 是项目在相应后续 Gate 存活后回答策略问题所需的自建仪器，不是首次 C0 前置。首次 C0 只需单次 runbook 与 raw capture。conditional admission ledger 只在 G2a 与 O1-vs-X* 均未停止方向后才允许实现为候选拒绝工具，不是 G1、Runtime backbone 或 Flagship evidence closure 的默认交付物。
 
 ### 0.3 核心可证伪问题
 
-在相同请求序列、worker 分配、L2 write-through、缓存容量和 Mooncake 后端下：
+在相同请求序列、worker 分配、缓存容量和 Mooncake 后端下：
 
-> 相比 ADMIT_ALL 与 calibration set 上调优后冻结的简单静态准入规则，利用决策时已经可见的复用价值信号，能否在预注册 TARGET_HELD_OUT Agent workload 上改善 Goodput@TTFT-SLO，或在 Goodput 不劣的前提下显著减少 `new_physical_put_bytes` 与无效写入？
+> 相比可实际构造的最强 stock frontier X*，固定 L2 后的 publication gate 是否存在物质机会；若存在，一个只用决策时合法可见信号的候选能否在预注册 TARGET_HELD_OUT workload 上改善 Goodput@TTFT-SLO，或在 Goodput 不劣的前提下显著减少 `new_physical_put_bytes` 与无效 publication？
 
-如果最强静态规则已经吃掉全部稳定空间，项目必须承认“复杂策略不值得”，不能继续包装成优化成功。
+同一 L2 treatment 内的 ADMIT_ALL / static gate 仍是必要的因果基线，却不能替代 X* 的替代攻击。若 online cheating oracle publication policy 都不能以预注册物质差异击败 X*，或最强简单规则已吃掉稳定空间，项目必须 STOP，不能继续包装成优化成功。
 
 ### 0.4 项目的真实归类
 
@@ -47,10 +47,12 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 - **Prefix-DAG**：负载结构和复用语义。
 - **SGLang HiCache**：生产级推理框架与分层 KV 生命周期底座。
 - **Mooncake**：跨 worker 共享 L3 KV pool。
-- **本项目拥有的机制**：L3 写入准入。
+- **本项目拥有的机制**：Shared-L3 Publication Admission。
 - **最终指标**：Goodput@TTFT-SLO、TTFT 分布、Mooncake KV payload Put/Get 字节、有效恢复与重算。
 
 因此它面向的是 KV cache 存储组中的“引擎—共享缓存池边界、准入与容量效率”画像，而不是 CUDA 算子组、纯推理调度组或存储引擎内核组。
+
+SGLang Agentic KV 若提供 workload 或明确的 future reuse/delivery intent，是该项目的 complement，而不是本项目要重做的控制面。当前 mainline 没有经本仓库 source-verified 的 intent-coupled producer；它不能被当作已集成能力，也不能被静默 DROP。HiCache 与 Mooncake 分别保留 L2 生命周期与 shared-L3 substrate 的 upstream ownership。
 
 ---
 
@@ -72,8 +74,8 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 | 多轮 Agent Prefix-DAG | workload 和测量输入 |
 | L1/L2 prefix cache | 固定 upstream 算法、容量、配置与 write policy |
 | L3 shared KV pool | 被写入和读取的 upstream substrate |
-| L3 写入准入 | 唯一 owned mechanism |
-| conditional admission ledger | 仅在 G2a 通过后实现；用于给定 eligibility stream 的 action/payload 对账、敏感性分析与候选 rejection filter |
+| Shared-L3 Publication Admission | 唯一 owned mechanism |
+| conditional admission ledger | 仅在 G2a + O1 未停止方向后实现；用于给定 eligibility stream 的 action/payload 对账、敏感性分析与候选 rejection filter |
 | 双 worker 在线实验 | 端到端裁决层 |
 | Mooncake metadata HA | 明确排除 |
 | L1/L2 淘汰策略 | 明确排除 |
@@ -103,7 +105,7 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 
 - **KV cache** 是被存储和搬运的数据。
 - **Prefix cache** 是按 token prefix 组织、查找和复用 KV 的语义与索引方式。
-- 项目使用 prefix 结构构造可复用 workload，但优化对象不是 radix tree 查找本身，而是共享 L3 的写入准入。
+- 项目使用 prefix 结构构造可复用 workload，但优化对象不是 radix tree 查找本身，而是 shared L3 的 speculative publication admission。
 
 ### 2.3 Offload
 
@@ -120,13 +122,17 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 
 本项目只研究前者。不能把写入减少带来的容量污染下降叙述成“我实现了更好的远端淘汰”。
 
-### 2.5 Value-aware 的含义
+### 2.5 Publication 的范围与 intent 边界
 
-这里的“价值”不是未来真值，也不是不可解释的模型预测，而是：
+本文的 publication admission 只面对 speculative / opportunistic L3 副本：L2 已可用，但尚无可证明的远端需求需要这次写入必须完成。当前 pinned mainline 中 intent-coupled publication set 记为**空集**。
 
-> 决策时合法可见的复用可能性 × 可节省的 prefill 成本 ÷ 经对账校准的预期 KV payload 字节。
+若未来 source/runtime 复核得到明确的 intent-coupled publication，必须 direct-admit 或另立、可验证的 priority 语义；不得因为它经过同一 hook 就以 speculative policy 静默 `DROP`。该未来路径不是现在的 feature、API 或测试授权。
 
-具体信号必须在 pinned source 上证明可获得；任何使用未来 next-use 的策略只能作为给定 eligibility stream 的条件式离线上界，不能成为在线候选或机会闸门。
+### 2.6 Value-aware 的含义与当前冻结
+
+“publication value”不是未来真值，也不是不可解释的模型预测；它只描述将来可能需要裁决的 L3 副本价值。当前项目尚未授权任何 `VALUE_DENSITY`、Agent hint、stale-publication 或 page-level 候选。只有 S1–S3、online oracle-vs-X* 与 own-arm lifecycle evidence 共同留下 residual，才可重新设计最小候选。
+
+任何使用 future demand / next-use 的 oracle 只能在真实 runtime 中作为 stop-only 上界；它不能成为 deployable candidate，离线 conditional ledger 更不能产出 TTFT/Goodput 因果结论。
 
 ---
 
@@ -137,11 +143,13 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 | 观察对象 | 多轮 Agent workload 中长共享前缀、分支会话、工具结果插入与跨 worker 再访问 |
 | 唯一决策 | ADMIT_TO_L3 或 DROP |
 | 控制变量 | L1/L2 算法、容量、配置与 write policy，路由结果、Mooncake 容量与淘汰、模型、tokenizer、请求序列 |
-| 主基线 | ADMIT_ALL 与调优后冻结的最强简单静态 L3 准入规则 |
+| 同一 treatment 因果基线 | L2_ONLY、DROP_ALL、ADMIT_ALL 与 calibration 后冻结的简单静态 L3 gate |
+| 外部替代基线 / null | X* = stock `write_through_selective` + sufficient L2 + 所有已 source/runtime-verified 可用 quota/eviction controls；其可配置性尚未完全核验 |
+| 机会排除上界 | online cheating oracle publication policy vs X*；只能停止方向，不能认证候选 |
 | 主结果指标 | Goodput@TTFT-SLO |
 | 机制指标 | KV payload Put/Get bytes、not-read-within-H、有效恢复字节、重算 token、adapter availability；L3 occupancy/eviction 仅作 conditional-ledger modeled 指标 |
 | owned mechanism | L3AdmissionPolicy + SGLang 窄 hook |
-| 自建仪器 | 必需：Prefix-DAG generator、trace collector/correlator、A/B runner；条件性：G2a 通过后的 conditional admission ledger |
+| 自建仪器 | 首次 C0：one-shot runbook/raw capture；后续 Gate 存活后才需要 Prefix-DAG generator、trace collector/correlator、A/B runner；条件性：G2a + O1 未停止方向后的 conditional admission ledger |
 | losing condition | 最强静态规则与候选差异落入噪声，或候选只在 calibration workload 上有效 |
 | 非目标 | router、L1/L2 eviction、remote eviction、Mooncake 数据面、量化、稀疏化、RDMA/GDR、HA |
 
@@ -150,11 +158,11 @@ G2 机会闸门通过后，VALUE_DENSITY 也只能成为 ROADMAP candidate，不
 多轮 Agent 负载可能同时包含：
 
 - 高频复用的长 system/tool prefix；
-- 只被消费一次的分支和工具结果；
 - 局部 worker 上已热、但其他 worker 随后需要的 prefix；
-- 大小和未来复用价值不成比例的 KV 段。
+- **sticky-reuse background**：本地复用达到 stock selective 阈值、因而会通过 upstream L2/L3 绑定路径，但几乎没有 remote Get / remote reuse value 的会话深后缀；
+- 只被消费一次的分支和工具结果，作为 stock selective 应能滤掉的负控制，而不是 L3-only gate 的承重 waste。
 
-因此 ADMIT_ALL 可能产生写后未读和容量污染；纯 second-hit/frequency 阈值又可能错过“第一次跨 worker 复用就很值钱”的长前缀。
+因此 ADMIT_ALL 可能产生写后未读和容量污染；但如果废料主要是 one-shot，X* 可能已经足够。项目仅在 sticky-reuse mass、真实 remote value 与 shared-pool pressure 都成立时，才有独立 publication gate 的机会。
 
 这是待验证假设，不是项目结论。
 
@@ -171,55 +179,28 @@ G2a 只要求其中至少一条获得运行时中介证据与端到端结果共�
 
 `ADMIT_ALL + fixed remote eviction` 是必须保留的强反例，而不是预设为弱支配选择性准入：只有在写成本隐藏、容量宽松，或 eviction 确实拥有不弱于 admission 的信息并能保护高价值对象时，才预期 ADMIT_ALL 最好或持平。普通 eviction “决策更晚”本身不证明它掌握更强信息。
 
-#### D1 投资前的 stock survival sentinels
+#### S1–S3：当前 survival contract
 
-`REMOTE_VALUE_SURVIVES` 通过后，不立即开发 D1。先用未打任何本项目 patch 的 pinned SGLang + Mooncake 做两个
-低成本投资筛查；它们不构成新的 Gate，也不复用 pre-launch research 已占用的 `R1/R2/R3` 名称：
+本项目的 active opportunity contract 由 [D14](DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击) 固定；它保留本节原有的 treatment-blind preregistration、压力 witness、fresh Store 隔离、有限重复和区间排除纪律，但替换了“one-shot 即代表 admission waste”的假设。以下状态均为 `ROADMAP`，不把外部讨论中的 upstream/生产事实升级为实验结论。
 
-| Sentinel | 固定问题与最小对照 | 继续 D1 的粗粒度信号 | 不能推出什么 |
+| 顺序 | Gate | 必须裁决的问题 | STOP / 不可替代边界 |
 |---|---|---|---|
-| `WRITE_COST_SENTINEL` | zero-reuse / one-shot workload、roomy L3、相同模型/请求/worker，在 baseline service-curve knee 附近比较 stock L3 enabled 与 L2_ONLY；同时保留低负载 sanity cell | L3 arm 有可识别的 Store NIC/CPU 活动，且 paired-run 相对 Goodput 退化的预注册单侧区间下界越过物质性阈值 | backend 开/关同时改变 Put 与 lookup/miss，只能说明最坏浪费下的整条 L3 path cost 可见，不能归因到写成本；NIC/CPU 或 submitted bytes 单独不能证明 admission 会改善性能，也不能产生 `new_physical_put_bytes` claim |
-| `CAPACITY_PRESSURE_SENTINEL` | backend 恒开，固定复用流 + one-shot fill 流；用两个 fresh、配置完全相同但 `global_segment_size` 为 roomy/small 的 external Store 运行 matched arms，并从 health/segment response 验证每个实际 segment | small arm 的 query-time storage availability/useful Get 下降、uncached/prefill tokens 上升，且 paired-run 相对 Goodput 退化的预注册单侧区间下界越过物质性阈值 | 只能证明容量敏感性；没有 SOURCE_VERIFIED eviction telemetry 时，不能声称观察到 occupancy、victim 或 eviction reason，更不能证明某个 admission policy 有效 |
+| S1 | `RESTORE_VALUE_REGION` | 在 B-local-cold 的双 worker 实际路径中，shared-L3 restore 是否既通过 `RESTORE_PATH_PASS` / `REMOTE_VALUE_SURVIVES`，又在预注册 target coordinate 中存在 restore 优于 recompute 的净价值区域？ | 在已覆盖、可裁决的 target region 内 `restore <= recompute`，或 remote Get 近似为零，STOP；无法建立 coldness、Get、token/endpoint 可比性或区间排除时是 `INCONCLUSIVE`，不是无价值。 |
+| S2 | `PUBLICATION_COST_ENVELOPE` | 在会通过 stock selective 的 sticky-reuse publication stream 上，publish 前后的 Store/queue/resource pressure 是否有已预注册的可观测 witness，且能传导到端到端目标？ | one-shot/unique-only 流量仅是负控制，不能让 S2 通过；实际 sticky publication mass 低于预注册物质性阈值时停止。 |
+| S3 | `CAPACITY_EXTERNALITY` | 在 bounded L3 的 shared-prefix + sticky-reuse background 坐标中，publication composition 是否留有 query-time availability → useful Get → avoided recompute 的机会？ | remote Get 近似为零、压力 witness 不成立、或无需更复杂机制的 stock frontier 已消除差异时停止；没有 SOURCE_VERIFIED telemetry 时只称 query-time unavailable，不能断言 victim/eviction reason。 |
 
-两个 sentinel 都必须冻结 workload、offered load、arm 顺序、fresh Store 隔离、噪声/物质性阈值并至少做 3 个
-paired repeats。`global_segment_size` 的配置合同绑定 pinned source；roomy/small 是否在目标 build 中实际生效，必须由
-各自 fresh Store 的 runtime response 证明，不能假设原地改容量或仅凭配置文件成立。
+S1 是 hard veto，必须先于任何 publication-policy claim；S2、S3 是并列机会通道。每个通道都要在查看 treatment 前冻结 workload、`Goodput@TTFT-SLO`、materiality `delta`、paired-run interval method、最少/最多重复、arm order、fresh-store isolation 和所需 pressure/fairness witness。单侧区间下界越过 `delta` 才为 signal，全部前提成立且上界低于 `delta` 才为有效 false；p-value 不显著、近零点估计、预算耗尽但区间仍跨阈值，均为 `INCONCLUSIVE`。S2/S3 都成为有效 false 时，按 D14 停止而不以 D1/hook 补工程量；D12 仅保留有效-null 的证据纪律与下述窄 payload 例外。
 
-在查看任一 treatment arm 结果前，必须先完成一份带 checksum 的 stock-sentinel preregistration，执行顺序固定为
-`CALIBRATE_BASELINE → FREEZE_CONTRACT → RUN_PAIRED_ARMS`：
+这些 gates 不用 offline replay 推断 TTFT/Goodput。它们通过只说明值得取得 trace 和最小 forced-action path truth，不能证明一个 candidate 会赢；G2a 后仍须让**各 arm 自己**的 lifecycle 证明机制链。online cheating oracle 仅在 runtime backbone 后作为 X* 的 stop-only upper bound：它能读取冻结 workload 的 future demand label，但必须在真实 online A/B 中运行、保留各 arm 自己演化的 state，绝不以 ledger 输出代替。
 
-1. `CALIBRATE_BASELINE` 只允许查看 control/baseline 数据。`WRITE_COST_SENTINEL` 的 offered-load grid、低负载
-   sanity cell 与 knee 选择规则必须只由 `L2_ONLY` service curve 决定，不能查看 L3-enabled 结果后移动 knee；
-2. roomy/small 先按固定 workload 的 reusable working-set 与 one-shot fill 的**预声明 KV payload 估算方法**构造：
-   small 应能容纳 reusable set、但不能同时容纳 reusable + fill，roomy 应能容纳完整 distinct set 加预声明安全余量。
-   估算方法、余量和配置值在 treatment 前冻结，运行时仍须由 fresh Store response 验证实际 segment；该估算只证明
-   intended capacity coordinate，不得包装成已观察到 occupancy、victim 或 eviction；
-3. preregistration 必须冻结 TTFT-SLO、唯一主端点 `Goodput@TTFT-SLO`、paired-run 统计单元、效应方向、区间估计方法、
-   工程物质性阈值 `delta`、最少/最多重复次数和停止规则。区间方法必须与顺序停止规则兼容；否则必须跑满冻结预算后
-   只判定一次。最少 3 对只是执行下限，不自动赋予 null 裁决能力；
-4. 定义相对退化 `d_write = (Goodput_L2_ONLY - Goodput_L3) / Goodput_L2_ONLY`，以及
-   `d_capacity = (Goodput_roomy - Goodput_small) / Goodput_roomy`。只有压力/隔离/Store 活动等前提成立，要求的中介
-   方向同时成立，且预注册单侧区间的下界大于 `delta`，对应 signal 才为 `true`；只有全部前提成立、实验精度足以使
-   单侧区间上界小于 `delta`，才可记为有效 `false`；区间跨越 `delta`、达到最大预算仍无排除能力，或任一前提不可证，
-   一律为 `INCONCLUSIVE`；任一 control Goodput 分母非正时相对退化无定义，同样不得裁决；
-5. “p-value 不显著”“均值接近零”或“只有 3 对重复”都不能单独产生有效 `false`。冻结后若必须改变 workload、knee、
-   容量、阈值或统计方法，应创建新 preregistration 版本并保留旧结果，不能静默覆盖后重跑。
+#### 历史 D12 stock survival sentinels（已被 S1–S3 收敛；不得直接执行）
 
-preregistration 模板见
-[experiments/manifests/g0-stock-sentinels-preregistration.example.json](../../experiments/manifests/g0-stock-sentinels-preregistration.example.json)。
+本节只保留早期 `WRITE_COST_SENTINEL` / `CAPACITY_PRESSURE_SENTINEL` 的 provenance 与“有效 null 必须由预注册区间排除、不能靠施工补救”的证据纪律。旧 workload、其 one-shot 假设及
+[historical manifest](../../experiments/manifests/g0-stock-sentinels-preregistration.example.json) 均为 `HISTORICAL_SUPERSEDED_BY_D14_DO_NOT_RUN`；它们不得形成 Gate、不得解锁 D1、trace 或 hook，也不得作为 S1–S3 的替代证据。
 
-这两个实验只是 admission-specific instrumentation 的**投资筛查**：至少一个按预注册区间规则成为 `true`，才自动继续
-D1/trace/hook；即使如此也不等于任一 admission 策略获益。若两项在已确认的 knee/capacity-pressure 坐标下都以区间
-上界低于物质性阈值成为有效 `false`，则 Goodput/TTFT 主线在实现前 STOP；此时只能保留 shared-L3 characterization 与方向筛查负结果，不能称为
-Runtime backbone（R）或 Flagship evidence closure（F），也不能为了展示工程量自动开发 D1/hook。
+当前唯一可执行的 pre-D1 路径是：先在首次短命环境完成 C0 restore qualification；C0 `PASS` 后，在 fresh C1 cohort 重做 C0，再完成 finite X* source/runtime audit、baseline-only calibration/freeze、S1 `RESTORE_VALUE_REGION`，最后在 sticky-reuse 上执行 S2/S3。D12 不覆盖 S1 hard veto、remote Get≈0 或 sticky-reuse mass 过小的 STOP。仅当 S1 已通过、性能方向仅因 S2/S3 双有效 false 而 STOP，且 owner 在任何 D1 结果前另行冻结真实 payload/resource 目标、资源预算、`new_physical_put_bytes` / `not-read-within-H` 的物质性判据及有界 observation-only 计划时，D12 才可例外解锁 D1 pre-collapse observation 与完成 stock payload 归因所需的最小 opaque correlation；第一次例外绝不解锁 behavior hook。只有 observation artifact 证明超过阈值、可映射到该资源目标的浪费，才可进行第二次 owner review 决定是否解锁最小静态 hook。
 
-双 null 后的唯一例外由 [D12](DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)
-约束：owner 必须在 D1 结果未知时另行冻结真实 payload/resource 目标、资源预算、物质性判据与有界的 observation-only
-证据计划；第一次授权只允许 D1 pre-collapse observation 和完成 stock payload 归因所需的最小 opaque correlation，
-不允许 behavior hook。只有该 artifact 证明超过阈值、可映射回资源目标的 new-Put 与写后未读浪费，才进行第二次
-owner review 决定是否解锁最小静态 hook。没有这份 resource-objective record 时，双 null 直接按 pre-implementation
-STOP 收口。无法证明负载拐点、实际 segment size、远端读来源或公平对照时，结果只能是 `INCONCLUSIVE`，不能
-当成“无机会”。
+没有该 resource-objective record 时，D14 的 STOP 直接收口；公平性、实际 segment、远端读来源或区间排除不可证时均为 `INCONCLUSIVE`，不得写成“无机会”。
 
 ### 3.2 三层完成定义
 
@@ -228,12 +209,12 @@ STOP 收口。无法证明负载拐点、实际 segment size、远端读来源�
 | 层 | 名称 | 最小交付 | 不意味着什么 |
 |---|---|---|---|
 | R | **Runtime backbone** | 在真实 SGLang→Mooncake 路径上，独立 trace-only correlation、最小 fail-open admission seam、all-or-none closure 与生命周期 oracle 都有 focused test 和可复现 run artifact；A Put→cold B Get 能被路径真值解释，且 stock restore 确实替代非零 prefill | 不意味着 G0 已完整通过，更不意味着某个策略有效或有性能收益 |
-| F | **Flagship evidence closure** | R 层已经满足，且 G0/G1 的 required artifacts、workload/trace、在线机会裁决与明确 Gate ruling 齐全；若 G2a 通过，才额外要求 G2b conditional ledger artifact | 不意味着 VALUE_DENSITY 必须存在，也不意味着可升级公开性能标题；D1 前的方向筛查 STOP 不属于 F，G2a STOP 也不要求为了补交付物实现 ledger |
+| F | **Flagship evidence closure** | R 层已经满足，且 G0/G1 的 required artifacts、workload/trace、在线机会裁决与明确 Gate ruling 齐全；若 G2a/O1 未停止方向，才额外要求 G2b conditional ledger artifact | 不意味着任何默认 candidate 必须存在，也不意味着可升级公开性能标题；S1–S3 的 pre-implementation STOP 不属于 F，G2a STOP 也不要求为了补交付物实现 ledger |
 | P | **Optional policy-positive** | 仅在 G2a 证明可行动 residual 后，实现最简单候选并经 G2b/G3 的 TARGET_HELD_OUT 在线裁决 | 不意味着 runtime backbone 的复杂度来自该 policy，失败时不得反向否定已完成的工程证据 |
 
 R 层是防止项目退化为“一个 `decide()` 函数 + 参数扫描”的最低工程线：删除 benchmark/分析脚本后，审查者仍必须能看到 upstream patch series、focused tests、异步终态 oracle、trace schema 和 stock/trace/forced-action 对照。R 层的实现证据可使对应组件成为 `IMPLEMENTED_UNVALIDATED`；只有每个具体 Gate 场景有 retained runtime artifact 才能升级该场景的 claim，D10 的真实 failure 缺失仍会使完整 G0 结论为 `INCONCLUSIVE`。
 
-R 是“若要称为 runtime flagship，最低必须完成什么”，不是无条件施工承诺。若 D12 的双-null STOP 在任何 owned
+R 是“若要称为 runtime flagship，最低必须完成什么”，不是无条件施工承诺。若 D14 active contract 的有效-null STOP 在任何 owned
 patch 前触发，项目应诚实保留方向筛查 artifact 并停止或重选；不能用“负结果也有价值”把未达到 R 的结果升级为 F。
 
 ### 3.3 预注册的判断与剪枝顺序
@@ -244,7 +225,7 @@ patch 前触发，项目应诚实保留方向筛查 artifact 并停止或重选�
 |---|---|---|---|
 | A：behavior seam 放在哪里 | L1→L2 前 / **L2 ack 后、`write_storage` 前** / Mooncake Put 后 | 前者污染 L2 生命周期，后者已支付 L3 成本；中间 seam 是唯一只改变 L3 admission 的位置 | pinned runtime 证明该 seam 无法保持 L2 或 async 不变量，则 STOP，不迁移到其他层 |
 | B：先改变行为还是先取得路径真值 | 只靠 source / **trace-only 先行** / 直接加 behavior hook | source 不能证明异步终态与 physical-object attribution；先加行为会把观测回归和机制回归混在一起 | trace-only 不能通过 non-interference，就停止 trace/payload 分支，不用 policy 绕过 |
-| C：是否值得复杂策略 | ADMIT_ALL / SECOND_HIT / STATIC_FREQ* / **仅在 G2a 后的 VALUE_DENSITY** | 先证明 shared L3、ADMIT_ALL waste 和静态规则 residual，再允许复杂候选；静态规则胜出就是有效负结论 | G2a residual 不达预注册阈值，删除 VALUE_DENSITY，不进入 G2b/G3 候选开发 |
+| C：是否值得任何新候选 | ADMIT_ALL / simple static gate / X* / **online oracle-vs-X*** | 先证明 shared L3、sticky-reuse mass、stock frontier residual 和 oracle 上界；静态规则或 X* 胜出就是有效负结论 | oracle 或 G2a residual 不达预注册阈值，冻结 candidate design，不进入 G2b/G3 候选开发 |
 
 ### 3.4 工程最低交付与反向删除测试
 
@@ -282,7 +263,8 @@ R 层必须同时满足以下最小所有权，不允许以 policy 参数实验�
                 │
                 ▼
        [唯一 owned hook]
-       ADMIT_TO_L3 | DROP
+       speculative: ADMIT_TO_L3 | DROP
+       future intent-coupled: direct-admit only
           │               │
           ▼               └── 保留 L2，不创建 L3 写入状态
     upstream Mooncake Put
@@ -302,7 +284,7 @@ R 层必须同时满足以下最小所有权，不允许以 policy 参数实验�
 
 > L2 备份已经完成、即将调用 L3 write_storage 之前。
 
-DROP 必须满足：
+对当前 speculative publication，DROP 必须满足：
 
 - L2 数据仍然可用；
 - 不进入 backup queue；
@@ -311,6 +293,8 @@ DROP 必须满足：
 - 不调用 Mooncake Put；
 - 不改变读路径、L2 eviction 实现或配置；不要求不同 treatment 的 L2 内容和 eviction event sequence 相同。
 - policy 本身异常时 fail-open 为 ADMIT_TO_L3，不能让实验机制破坏 serving 正确性。
+
+intent-coupled publication 当前为空集；这张图不授权为它增加 queue、priority scheduler 或动态 policy service。若它在 future source/runtime 中出现，先扩展项目契约，再测试其必须 bypass speculative DROP 的不变量。
 
 ---
 
@@ -468,8 +452,10 @@ L1/L2 原始生命周期、event 产生和实际数据运动仍属于 upstream�
 3. 同一父 prefix 的多分支会话树；
 4. 工具调用结果插入造成的长短不等分支；
 5. 跨 worker 再访问；
-6. 热 prefix、一次性 prefix 与周期性复用混合；
+6. shared prefix、sticky-reuse background 与 one-shot negative control 的可区分混合；
 7. 固定并发与可控 offered load。
+
+其中 sticky-reuse 的操作定义必须在 source/runtime 复核 stock selective semantics 后冻结：它至少需要在本地达到会被 stock selective 放行的复用条件，却在固定 horizon 内低 remote Get / remote reuse value。不能以“unique-heavy”替代这一定义；one-shot 只验证 X* 能滤掉的路径，不承重 L3-only gate 的机会。
 
 ### 7.3 主要参数轴
 
@@ -482,6 +468,8 @@ L1/L2 原始生命周期、event 产生和实际数据运动仍属于 upstream�
 | reuse distance | second-hit、recency 与未来复用何时失效 |
 | offered load | admission 收益能否传导到 TTFT SLO |
 | branch fan-out / depth | Agent 树结构是否增加写后未读 |
+| sticky-reuse publication mass | stock selective 已放行但 remote value 低的可测 bytes 是否达到物质性阈值 |
+| remote Get frequency | shared-L3 的实际需求是否接近于零 |
 
 参数空间用于寻找边界，不用于穷举所有组合。最终只保留能区分机制的代表性坐标。
 
@@ -494,7 +482,7 @@ L1/L2 原始生命周期、event 产生和实际数据运动仍属于 upstream�
 - workload seed 与 DAG 描述；
 - worker assignment；
 - cache page size 与三级容量；
-- policy 名称、参数与参数来源；
+- policy 名称、参数与参数来源，以及 `CALIBRATION` / `ORACLE_EVAL` / `TARGET_HELD_OUT` / `OOD_SHIFT` split 身份；
 - offered load 与 TTFT SLO；
 - 清池方式、运行顺序与重复编号。
 
@@ -653,6 +641,10 @@ Replay 不模拟完整 GPU scheduler、CUDA 执行、真实网络竞争或最终
 - 被称为可部署 oracle；
 - 向在线策略泄露 TARGET_HELD_OUT 的 future。
 
+这不与 D14 的 O1 冲突：U1 是**离线 ledger**，永远不能裁决 TTFT/Goodput；O1 是真实双-worker runtime 中、针对冻结且独立于 TARGET_HELD_OUT 的
+`ORACLE_EVAL` split 临时允许读取 future demand label 的 cheating publication policy。O1 也不是公平 candidate baseline：它只能在无法物质性击败
+X* 时触发 STOP，不能因为赢了而认证某个 online signal、公式或 candidate。
+
 ---
 
 ## 10. Policy 与 Baseline Ladder
@@ -683,39 +675,29 @@ online_context 只能包含决策时已经存在且能从 pinned path 合法获�
 | B1 | L3_ADMIT_ALL | 同一 hook 的全写基线，暴露写放大和污染 |
 | B2 | L3_SECOND_HIT | 在同一 hook 内只按二次访问写 L3 |
 | B3 | STATIC_FREQ* | 在 calibration set 调优、随后冻结的最强简单阈值 |
-| C1 | VALUE_DENSITY | 条件候选，仅在机会闸门通过后实现 |
-| A1 | C1 去掉关键 signal 或 threshold frontier | 多信号候选做 deletion；单阈值候选只画 frontier，不伪造 ablation |
-| U1 | conditional future-aware upper bound | 仅检查给定 eligibility stream 的 action/payload 空间，不做系统级因果基线 |
+| X* | stock frontier | `write_through_selective + sufficient L2 +` 已核验可用的 stock quota/eviction controls；外部 substitute，不与 B0–B3 混作 L3-only causal attribution |
+| O1 | online cheating oracle publication | future demand label 只用于预冻结、独立于 TARGET_HELD_OUT 的 `ORACLE_EVAL` split 上的 stop-only upper bound；在真实 isolated runtime 与 X* 比较，不是部署候选 |
+| C1 | residual-driven candidate | 当前冻结；仅在 G2a 与 O1 均未排除机会后，以新的 owner decision 重新定义 |
+| U1 | conditional future-aware ledger view | 仅检查具名 source-run 的 action/payload 空间；不是 O1，不能输出 TTFT/Goodput 或策略 ranking |
 
 星号表示参数只能在 calibration workload 上选择，不能看 TARGET_HELD_OUT 结果后回调。
 
-### 10.3 Stock selective 的正确地位
+### 10.3 Stock selective 与 X* 的正确地位
 
-SGLang stock write_through_selective 可以作为**外部整系统参考**，但不能混入 L3-only 因果基线：它不是本项目“固定 L2 write-through 后再做 L3 gate”的同一 treatment，会改变上游 L2/L3 写入语义。
+SGLang stock `write_through_selective` 及其可实际构造的 X* 组合是**最强外部整系统替代攻击**，但不能混入 L3-only 因果基线：它不是本项目“固定 L2 write-through 后再做 L3 gate”的同一 treatment，会改变上游 L2/L3 写入语义。
 
 必须明确区分：
 
 - L3_SECOND_HIT：本项目在固定 L2 后实现的可归因基线；
-- stock write_through_selective：upstream whole-system reference。
+- X*：`stock write_through_selective + sufficient L2 +` 经固定 source/runtime 证明可配置的 quota/eviction controls；若 quota/adaptor wiring 尚未证明，必须从 X* 实例中移除并把该缺口记为 `SOURCE_TO_REVERIFY`，不能假装已打开。
+- O1：只要 online cheating oracle 无法以预注册物质性击败 X*，即 STOP；它只能读取独立 `ORACLE_EVAL` 的 future label，不触碰 TARGET_HELD_OUT；它的胜利也只保留机会，不支持任何 candidate claim。
 
-### 10.4 条件候选
+### 10.4 候选设计当前冻结
 
-只有 G2a 在 STATIC_FREQ* 自己的在线 lifecycle trace 中测出超过噪声的可行动 residual，才进入最简单候选：
+`VALUE_DENSITY`、Agent hint、stale-publication 与 page-level admission 目前都不是已批准 candidate。G2a 中
+STATIC_FREQ* 自己的在线 lifecycle trace、S2/S3 的 pressure evidence 和 O1-vs-X* 只能回答是否还有机会；它们不预先决定用什么 signal 或公式。
 
-    value_density
-      = estimated_reuse_probability(hit_count, recency)
-      × calibrated_saved_prefill_ms(prefix_length)
-      ÷ validated_expected_payload_bytes
-
-当 value_density ≥ frozen threshold 时 ADMIT，否则 DROP。
-
-约束：
-
-- probability 可以是单调 bucket/table，不引入 ML；
-- prefill cost curve 独立测量并冻结；
-- threshold 只在 calibration set 选择；
-- 决策以 prefix-closed segment 为单位；
-- 若 STATIC_FREQ* 已经足够，停止，不为了“有算法”继续堆复杂度。
+重开条件是：新的 owner decision 必须指出具体 residual、合法在线信号、最小 binary action、X* 公平对照、反例和 STOP；仍须以 prefix-closed group 为决策单位，参数只能在 calibration set 冻结。没有这份重新裁决，就不实现任何 candidate，也不以“先把公式写出来”为理由扩展 trace 或控制面。
 
 ---
 
@@ -743,7 +725,7 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 - master/metadata 等辅助进程可共置在 C，但均属于 upstream 依赖；
 - 跨节点事件用 request/op id 与 worker-local sequence 合并，不依赖三台机器 wall clock 的严格全序。
 
-### 11.2 为什么必须双 worker
+### 11.2 为什么必须双 worker lifecycle
 
 单 worker 的远端命中容易和本地 L1/L2 命中混淆。最小关键证明是：
 
@@ -753,6 +735,11 @@ workload driver 可与 CPU Storage Node 共置；若观测到干扰，再拆为�
 4. Get 产生非零、可归因的 storage-cached tokens，并相对同请求的 B-cold no-L3 control 实际减少 uncached/prefill tokens。
 
 如果这条链不能稳定成立，shared KV pool 项目没有立项基础。
+
+这里的“双 worker”是两个相互独立、可证明本地冷的 worker lifecycle，不要求首次 C0 同时占用两块物理 GPU。
+首次 C0 可以在同一物理 GPU 上顺序执行：A 的 Put terminal 已保存且 A 已退出后，才创建 fresh B；两者不得共享
+可写状态或 persistent local cache。该结果只能支持 cross-process restore，不支持 cross-GPU、multi-host 或并发
+claim。C1 必须在 fresh cohort 中重做 C0，并独立冻结其正式拓扑与隔离证据。
 
 这里必须分开两个结果：
 
@@ -792,9 +779,10 @@ G0 只有两者都成立才继续。TTFT 在这里仅作诊断：它可能因 TC
 
 | 场景 | 目的 | 必须观察 |
 |---|---|---|
-| CROSS_WORKER_RESTORE | 分别证明 stock restore 链路正确与机制存活 | `RESTORE_PATH_PASS`：Mooncake Put/Get、B 本地冷、输出一致；`REMOTE_VALUE_SURVIVES`：`cached_tokens_details.storage > 0`，且同请求 B-cold L3 arm 的 uncached/prefill tokens 少于 no-L3 control |
-| WRITE_COST_SENTINEL | 在 D1 前筛查最坏浪费下的 stock L3 path cost 是否能传导到前台 | zero-reuse、roomy L3、service-curve knee 下，L3 enabled/L2_ONLY 的 Store 活动与 paired TTFT-SLO/Goodput；该对照含 lookup/miss，单独 NIC/CPU 增长不算性能信号 |
-| CAPACITY_PRESSURE_SENTINEL | 在 D1 前筛查 bounded L3 容量是否影响有价值 KV 的 query-time availability | 两个 fresh Store 的实际 roomy/small segment response、复用请求的 storage-cached/useful Get、uncached/prefill tokens 与 paired TTFT-SLO/Goodput |
+| S1 `RESTORE_VALUE_REGION` | 分别证明 stock restore 链路、prefill substitution 与 restore-vs-recompute 的可裁决价值区域 | `RESTORE_PATH_PASS`、`REMOTE_VALUE_SURVIVES`，并在预注册 coordinate 中保留 B-cold control 的 endpoint/interval evidence；TTFT-only 变化不能替代 token oracle |
+| S2 `PUBLICATION_COST_ENVELOPE` | 在会通过 stock selective 的 sticky-reuse publication stream 上筛查 publication cost 是否有前台机会 | frozen sticky-reuse definition/mass、roomy/bounded coordinate、Store/queue pressure witness 与 paired endpoint；zero-reuse/one-shot 仅负控制，不能单独构成 signal |
+| S3 `CAPACITY_EXTERNALITY` | 筛查 bounded L3 中 sticky publication composition 是否影响有价值 KV 的 query-time availability | 两个 fresh Store 的实际 roomy/small segment response、shared-prefix 与 sticky background、storage-cached/useful Get、uncached/prefill tokens 与 paired endpoint；无 telemetry 时不归因 victim/eviction |
+| O1 `ORACLE_VS_XSTAR` | 在线机会的 stop-only 上界 | future-demand cheating oracle 与实际构造的 X* 在独立 fresh Store、相同外部条件下的 paired Goodput/TTFT；禁止用 offline replay 代替 |
 | ALWAYS_DROP | 证明 DROP 不碰 L2 控制面且无 L3 Put | L2 write-through 路径、配置、refcount 正确性与 eviction 实现不变；不要求内容或 eviction 事件序列相同；`admitted_payload_bytes = submitted_payload_bytes = 0`，且无 L3 operation/queue/protection/Put |
 | ALWAYS_ADMIT | 证明 hook 等价于 stock write-through path | correctness、bytes、TTFT 落在等价区间 |
 | PREFIX_CLOSURE | 证明策略不制造不可达 descendant | remote lookup 无 policy-induced hole |
@@ -812,6 +800,8 @@ G0 只有两者都成立才继续。TTFT 在这里仅作诊断：它可能因 TC
 - prefix size：短 / 长 / 混合；
 - reuse distance：短 / 长 / bimodal；
 - value-frequency correlation：正相关 / 弱相关 / 反相关。
+- sticky-reuse publication mass：低 / 中 / 高；
+- target remote Get frequency：近零 / 可观测 / 高。
 
 离线矩阵只用于找出代表性 sentinel，不追求所有组合全覆盖。
 
@@ -844,8 +834,8 @@ G0 只有两者都成立才继续。TTFT 在这里仅作诊断：它可能因 TC
 
 “显著”的统计和工程阈值必须在 calibration 后、TARGET_HELD_OUT 前冻结；不能事后按图挑阈值。
 
-D1 前 sentinel 使用更严格的投资裁决：`true` 要求预注册效应区间下界越过物质性阈值；有效 `false` 要求上界已低于
-该阈值。区间仍跨阈值时只能是 `INCONCLUSIVE`。两项有效 `false` 才能触发 D12；“未检出显著差异”本身不能触发 STOP。
+S1–S3 使用更严格的投资裁决：`true` 要求预注册效应区间下界越过物质性阈值；有效 `false` 要求上界已低于
+该阈值。区间仍跨阈值时只能是 `INCONCLUSIVE`。S2/S3 均有效 false 才能触发 D14 的机会 STOP；S1 不存在可裁决 restore-value region 或 remote Get≈0 单独触发 STOP；“未检出显著差异”本身不能触发 STOP。
 
 ### 12.5 公平性规则
 
@@ -856,7 +846,7 @@ D1 前 sentinel 使用更严格的投资裁决：`true` 要求预注册效应区
 - candidate 与 baseline 使用相同清池、warm-up、重复和统计方法；
 - 以独立 run 为统计单元，不能把同一 run 内相关请求伪装成独立样本；
 - headline cell 至少做 5 个 paired repeats，其他核心 cell 至少 3 个；若测床噪声要求更多，以预注册 power/noise 结果为准；
-- 对 D1 前 stock sentinel，最少重复数只是下限；若效应区间仍跨越物质性阈值，必须按冻结的最大重复预算继续，预算耗尽仍
+- 对 S1–S3 survival gates，最少重复数只是下限；若效应区间仍跨越物质性阈值，必须按冻结的最大重复预算继续，预算耗尽仍
   不能排除物质性效应时记为 `INCONCLUSIVE`，不得用“不显著”生成有效 null；
 - 固定解码下输出 token 一致，request error、hang、queue/ref leak 为零容忍；
 - 报告所有 sentinel，不只报告赢的 workload；
@@ -869,18 +859,22 @@ D1 前 sentinel 使用更严格的投资裁决：`true` 要求预注册效应区
 - L3 容量大于活跃 working set、写带宽无压力：ADMIT_ALL 应最好或持平；
 - 几乎所有对象都高 fan-out 且跨 worker 复用：选择性准入的 false negative 会伤害命中；
 - one-shot，或复用只发生在同 worker 的 L2 保留期内：L2_ONLY / DROP_ALL 应最好；
+- one-shot/unique-heavy 是 X* 预期能处理的流量：不能以其上出现的 path-cost 结果证明独立 L3-only gate；
+- sticky-reuse publication bytes 太小、目标部署 remote Get≈0，或在可裁决 region 内 restore 不优于 recompute：STOP；
 - 短 prefix 的远端写读成本不低于重算；
 - 热点变化快于历史窗口：旧热度造成 false positive / false negative；
 - Mooncake dedup 已消除大部分重复 Put：可优化的 `new_physical_put_bytes` 很小；
 - 瓶颈位于 read、GPU compute 或 L2，而不是 L3 write/capacity；
 - 异步 Put 被完全隐藏：可能只有 payload/capacity 收益，没有 Goodput 收益；
-- STATIC_FREQ* 自己的在线 trace 中，unused-put 与 dropped-then-demanded residual 均低于物质性阈值：动态候选没有存在必要；
+- STATIC_FREQ* 自己的在线 trace 中，unused-put 与 dropped-then-demanded residual 均低于物质性阈值，或 O1 打不过 X*：没有 candidate 存在必要；
 - policy CPU/queue 开销抵消节省；
 - calibration 赢、TARGET_HELD_OUT 反向：不得称为目标分布上的成功。
 
 ---
 
 ## 13. Gate / STOP 流程
+
+`G0` 保留为 source/runtime closure 的总称，不表示必须先完成 hook 才能做生存裁决。实际顺序是：用最小目标环境完成首次 C0；只有 C0 同时满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`，才创建 fresh C1 cohort 重做 C0，随后完成 finite X* audit、baseline-only calibration/freeze、`S1 RESTORE_VALUE_REGION`，再执行并列的 `S2 PUBLICATION_COST_ENVELOPE` / `S3 CAPACITY_EXTERNALITY`。只有 active contract 存活才进入 D1 trace-only 与最小 hook。旧 D12 sentinel 的命名和 one-shot workload 已被 D14 收敛，不能作为执行授权。G2a 后还须运行 O1-vs-X* 的在线 stop-only upper bound，才可请求重开 candidate design。
 
 ### G0：源码与运行时真相
 
@@ -901,6 +895,20 @@ STOP：
 - DROP 会改变 L2 或破坏引用状态；
 - remote restore 在目标条件下不减少任何 prefill；
 - 必须新增远端 metadata/read path 才能保证可达。
+
+### S1：RESTORE_VALUE_REGION
+
+通过条件：
+
+- 先满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`；
+- 在 treatment-blind preregistration 冻结的 target workload/load/capacity coordinate 中，shared-L3 restore 相对 B-cold recompute control 留下可裁决的净价值区域；token-level prefill substitution 是必要路径证据，最终 endpoint 仍须保留相同 request、worker coldness、output 与 run-isolation oracle；
+- remote Get 不只是偶发路径，频率和 useful value 达到预注册的物质性下限。
+
+STOP：在已覆盖且区间有排除能力的 target region，`restore <= recompute`，或 remote Get 近似为零。无法证明 coldness、Get、token/endpoint 可比性或区间排除时只能是 `INCONCLUSIVE`，不得以“没有显著差异”或更多 hook 施工伪造 S1 存活。
+
+### S2 / S3：publication opportunity envelopes
+
+S2/S3 的定义、one-shot negative-control 地位、sticky-reuse contract、pressure witness 和 interval rules 以 [S1–S3 active contract](#s1s3当前-survival-contract) 与 D14 为准。它们必须在会被 stock selective 放行的 sticky-reuse stream 上运行，且不允许用 offline replay 推断 endpoint。两个通道均在全部前提成立后成为有效 false 时，停止 Goodput/TTFT publication-admission 主线；任一为 `INCONCLUSIVE` 不形成 null STOP。
 
 ### G1：仪器可信
 
@@ -927,10 +935,10 @@ STOP：
 
 通过条件：
 
-- shared L3 对至少一个受控 Agent 坐标有稳定净价值；
-- ADMIT_ALL 存在非噪声级 not-read-within-H / closed-DAG unused payload，或可观测的 query-time unavailability；
+- S1 已留下至少一个可裁决的 restore-value region，且 shared L3 对受控 Agent 坐标有稳定净价值；
+- ADMIT_ALL / fixed-L2 publication path 存在非噪声级 sticky-reuse admitted-but-not-read payload，或可观测的 query-time unavailability；
 - “写成本 / 资源争用”或“容量竞争 / 查询时可用性”两条候选收益因果链中，至少一条由各 arm 自身的运行时中介证据与 paired Goodput@TTFT-SLO 结果共同支持；
-- STATIC_FREQ* 自己的在线 lifecycle trace 同时留下可观的 admitted-but-not-read 与 dropped-then-demanded residual；
+- STATIC_FREQ* 自己的在线 lifecycle trace 同时留下可观的 admitted-but-not-read 与 dropped-then-demanded residual，且 X* 未已用更简单 upstream 组合支配该机会；
 - 可在线获得的信号与该 gap 有可解释关系。
 
 链 A 不能只用 NIC/CPU 计数器或 submitted bytes 通过，必须闭合 decision → `new_physical_put_bytes` → queue/resource pressure → Goodput/TTFT；链 B 不能只用 modeled occupancy 通过，必须闭合 decision → query-time availability/useful Get → computed prefill/recompute → Goodput/TTFT。若两条链都没有通过，G2a 对性能策略为 STOP；只有 new-Put payload 节省时，最多保留 payload-efficiency 分支。
@@ -947,16 +955,18 @@ dropped-then-demanded 只是 opportunity marker，不证明“当时若 ADMIT �
 
 STOP / 降级：
 
-- L3 本身无价值：停止策略项目；
+- S1 无 restore-value region、目标部署 remote Get≈0，或 L3 本身无价值：停止策略项目；
 - 两条候选收益因果链都缺少“运行时中介 + 端到端结果”的共同证据：停止 Goodput/TTFT 策略方向；仅有 new-Put payload 节省时降级到 payload-efficiency；
 - ADMIT_ALL 几乎无浪费：只保留链路 characterization；
 - dedup 已经消除绝大多数实际重复 Put：降级为负结果；
-- STATIC_FREQ* 的 own-arm residual 低于物质性阈值：结论为“简单规则足够”，不实现复杂候选；
+- sticky-reuse publication bytes 或 STATIC_FREQ* 的 own-arm residual 低于物质性阈值：结论为“简单规则/X* 足够”，不实现候选；
 - gap 只由 future information 产生：不得上线。
+
+在请求 G2b/candidate 前，运行 O1：online cheating oracle publication vs independently constructed X*。O1 若在预注册 interval/materiality 下不能击败 X*，立即 STOP；O1 若可赢，只保留“未被上界排除”的事实，不能将 future label 迁移给 online candidate 或 ledger。
 
 ### G2b：Conditional replay rejection filter
 
-只有 G2a 通过后，才允许实现最小 conditional ledger，并在其中实现 VALUE_DENSITY，将其保持为 ROADMAP candidate。runtime hook 尚不启用候选。实现前先冻结 calibration、conditional-replay-validation、TARGET_HELD_OUT 与 OOD_SHIFT 的边界；ledger 输出必须携带 source policy/run，且不能声称跨策略 causal ranking。
+只有 G2a 与 O1 都未停止方向后，才允许实现最小 conditional ledger；runtime hook 仍不启用新 candidate。`VALUE_DENSITY` 不再是默认 ledger delivery。O1 必须先在独立 `ORACLE_EVAL` split 完成，不能读取 TARGET_HELD_OUT future label；实现前先冻结 calibration、conditional-replay-validation、ORACLE_EVAL、TARGET_HELD_OUT 与 OOD_SHIFT 的边界；ledger 输出必须携带 source policy/run，且不能声称跨策略 causal ranking。
 
 ledger 自身通过条件：
 
@@ -983,7 +993,7 @@ STOP：
 - 只有依赖未经验证 eviction model 才能赢；
 - decision overhead 的保守估计已超过收益。
 
-G2b 只能拒绝明显不值得上线测试的候选，不能证明 candidate 胜出。未被拒绝后才实现并启用 runtime candidate；此时状态是 IMPLEMENTED_UNVALIDATED，公开标题仍不升级。
+G2b 只能拒绝明显不值得上线测试的候选，不能证明 candidate 胜出。ledger 未拒绝不等于授权 candidate；只有新的 owner decision 根据 residual 定义最小 online candidate 后，才可实现并启用它；此时状态是 IMPLEMENTED_UNVALIDATED，公开标题仍不升级。
 
 ### G3：在线因果验证
 
@@ -1029,10 +1039,13 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 | 字段 | 回答的问题 | 合法值 | 规则 |
 |---|---|---|---|
 | `claim_state` | 这条主张被何种证据支持？ | `ROADMAP`、`SOURCE_VERIFIED`、`IMPLEMENTED_UNVALIDATED`、`EXPERIMENTALLY_VALIDATED` | 仅随对应 source/code/runtime evidence 升级；一个 Gate 的 PASS 只升级它所支持的具体 claim |
-| `gate_outcome` | 这次 scenario / Gate 执行发生了什么？ | `PASS`、`FAIL`、`INCONCLUSIVE`、`STOP` | 每份 run bundle 都必须有；`INCONCLUSIVE` 不是 PASS，也不能提升完整 Gate 或 performance claim |
+| `execution_status` | 这次尝试是否进入了某个 Gate 的可裁决请求链？ | `BLOCKED_BEFORE_<GATE>`、`EXECUTED` | build/API/config、write-condition、GPU、Store 或 TCP admission 失败时必须停在对应状态；首次 C0 使用 `BLOCKED_BEFORE_C0`，不能伪造 Gate outcome |
+| `gate_outcome` | 已执行的 scenario / Gate 发生了什么？ | `PASS`、`FAIL`、`INCONCLUSIVE`、`STOP` | 只在 `execution_status=EXECUTED` 后填写；`INCONCLUSIVE` 不是 PASS，也不能提升完整 Gate 或 performance claim |
 
 规划、决议和运行结果应各自保持位置：`DECIDED` 是决议文件的状态，不是上述任何 claim state；例如 D1 可为
 `DECIDED` 且其 new-Put attribution 仍为 `ROADMAP/STOP`。
+
+`RESEARCH_REVIEW / SOURCE_TO_REVERIFY` 是记录外部讨论、旧 PR/benchmark 或未重新审计 upstream 动态的**来源限定语**，不是第五种 claim state。它可以说明为什么需要设计某项检查，不能支持“当前 pin 如此工作”、runtime compatibility 或实验收益；在固定 source 或 retained artifact 复核前不得升格。
 
 本文强制使用以下 claim-state 词典：
 
@@ -1059,11 +1072,13 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 | Mooncake adapter 支持 shared L3 路径 | SOURCE_VERIFIED，待本地部署验证 | adapter/README | “计划以 Mooncake 验证跨 worker 复用” |
 | SGLang 社区把 HiCache 准入/策略视作持续演进问题 | SOURCE_VERIFIED | roadmap issue | “官方 roadmap 证明问题域真实” |
 | Prefix-DAG generator、trace、hook、policy | ROADMAP | 尚未在本项目实现 | 只能说“计划实现” |
-| Conditional admission ledger | ROADMAP，gated behind G2a | 尚未在本项目实现；G1 与 G2a 不要求它 | 只能说“若 G2a 通过，计划在 G2b 实现候选拒绝工具” |
-| Agent Prefix-DAG 会造成 ADMIT_ALL 浪费 | ROADMAP hypothesis | 尚无项目数据 | 只能说“待测假设” |
-| stock L3 path-cost envelope 或 bounded-capacity pressure 可传导到 Goodput/TTFT | ROADMAP hypothesis | `WRITE_COST_SENTINEL` / `CAPACITY_PRESSURE_SENTINEL` 尚未运行 | 只能说“D1 前计划筛查两类粗粒度性能机会”；前者尚未隔离 write contribution |
+| Conditional admission ledger | ROADMAP，gated behind G2a + O1 | 尚未在本项目实现；G1/G2a 与 O1 STOP 分支均不要求它 | 只能说“若 G2a/O1 未停止方向，计划在 G2b 实现候选拒绝工具” |
+| stock selective 与 L2 admission/L3 publication 的确切绑定语义 | ROADMAP | `RESEARCH_REVIEW / SOURCE_TO_REVERIFY`：当前本仓库尚未针对 pinned source 复核该替代攻击所需的全部细节 | 只能说“待 source audit，不能据此声明 residual 已存在” |
+| sticky-reuse background 会造成 material speculative publication | ROADMAP hypothesis | 尚无项目 runtime trace；one-shot 不能作为该假设的替代 | 只能说“待测假设” |
+| S1 restore-value region、S2 publication cost 或 S3 capacity externality 可传导到 Goodput/TTFT | ROADMAP hypothesis | S1–S3 尚未运行；旧 D12 sentinel 已 superseded | 只能说“计划按压力 witness 与区间规则筛查” |
+| X* 可构造、online oracle 可以或不能击败它 | ROADMAP | quota/adaptor wiring、exact stock controls 和 runtime cohort 均未验证；source controls 为 `SOURCE_TO_REVERIFY` | 只能说“强替代攻击待构造与在线裁决” |
 | STATIC_FREQ* own-arm trace 留有可行动 residual | ROADMAP | 尚无数据 | 禁止当作事实 |
-| VALUE_DENSITY 优于静态规则 | ROADMAP | 尚无数据 | 禁止写进简历 |
+| 任意新的 Agent hint / VALUE_DENSITY candidate 优于静态规则或 X* | ROADMAP（当前冻结） | 尚无数据，且未被 D14 授权设计 | 禁止写进简历或实现计划 |
 | 双 worker 下减少 new physical Put payload 且 Goodput 非劣 | ROADMAP | 尚无数据；D1 observation patch 尚未实现 | 只能留 X 占位 |
 | 双 worker 下改善 Goodput@TTFT-SLO | ROADMAP | 尚无数据 | 只能留 Y 占位 |
 
@@ -1078,13 +1093,13 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 条件：
 
 - 过 G0–G3；
-- 赢最强公平静态基线；
+- 赢同一 treatment 的最强公平静态基线与可构造的 X*；
 - TARGET_HELD_OUT 上 Goodput@TTFT-SLO 达到预注册改善阈值；
 - 失败边界清楚。
 
 可叙述为：
 
-> 我固定 L2 和远端实现，只修改 L3 写入准入；在指定 Agent workload 坐标下获得 X/Y，并证明收益来自哪些在线信号。
+> 我固定 L2 和远端实现，只修改 speculative Shared-L3 Publication Admission；在指定 workload 坐标下相对 X* 获得 X/Y，并证明收益来自哪些在线信号。
 
 ### 终局 A2：仅 payload / capacity efficiency 正结果
 
@@ -1099,16 +1114,16 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 
 > 候选在固定 SLO 表现下减少了 Mooncake new physical Put payload 与 not-read-within-H；异步写入被隐藏，因此没有声称 TTFT/Goodput 提升。
 
-### 终局 B：简单规则已经足够
+### 终局 B：简单规则或 X* 已经足够
 
 条件：
 
 - ADMIT_ALL 有浪费；
-- 但 L3_SECOND_HIT 或 STATIC_FREQ* 的 own-arm residual 已低于预注册物质性阈值。
+- 但 L3_SECOND_HIT / STATIC_FREQ* 的 own-arm residual 已低于预注册物质性阈值，或 O1 无法物质性击败 X*。
 
 这是合格负结果：
 
-> 我用双 worker 在线 lifecycle trace 发现，调优静态规则的 own-arm residual 低于物质性阈值，因此按 G2a 停止，未实现 conditional ledger 或复杂 value-aware policy；静态规则在该负载族上是更好的工程选择。
+> 我用双 worker 在线 lifecycle trace 与 X* 替代攻击发现，调优静态规则已足够，或即使 cheating oracle publication 也无法物质性超过 X*；因此按 Gate STOP，未设计复杂 candidate。
 
 不得为了简历继续加 signal。
 
@@ -1117,12 +1132,13 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 可能原因：
 
 - cross-worker reuse 太低；
-- 远端恢复慢于重算；
+- 在可裁决 target region 内远端 restore 不优于 recompute；
+- 目标部署 remote Get 近似为零；
 - working set 太小，L1/L2 已覆盖；
 - prefix 太短；
 - offered load 未到 SLO knee。
 
-可保留 characterization 和边界图，但不再声称优化 L3 admission。若该结论由 D1 前两个 stock sentinel 的有效
+可保留 characterization 和边界图，但不再声称优化 Shared-L3 Publication Admission。若该结论由 S1 STOP 或 S2/S3 的有效
 null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也不能作为已完成的 runtime flagship。只有
 先前已经满足 R、随后在 G2/G3 得到无净价值结论时，才可能作为 F 层的工程负结果收口。
 
@@ -1175,7 +1191,7 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 
 一句话：
 
-> 我做的不是新的 KV 存储后端，而是生产推理框架到共享 KV pool 的写入控制面：用 Agent Prefix-DAG 重放和 Mooncake KV payload 探针判断哪些 KV 值得进入远端池，再用双 worker 端到端验证它是否真正改善 TTFT SLO。
+> 我做的不是新的 KV 存储后端，而是生产推理框架到 shared KV pool 的 speculative publication 控制面：先用 restore-value、publication-cost、capacity-externality 与 stock X* 做替代攻击，再只在未被排除的坐标中用双 worker 端到端验证。
 
 ---
 
@@ -1188,7 +1204,7 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 3. DROP 为什么不破坏 L2；
 4. prefix closure 为什么是正确性/可达性约束；
 5. logical KV bytes、Mooncake physical-object payload bytes 与 NIC/wire bytes 为什么不同；
-6. stock selective 为什么不是公平 L3-only baseline；
+6. 为什么 stock selective/X* 虽非同一 L3-only treatment，仍是必须击败的替代攻击；
 7. Worker B 如何证明不是本地命中；
 8. replay 为什么不能直接预测 TTFT；
 9. 最强静态基线如何调优和冻结；
@@ -1198,9 +1214,9 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 
 ### 17.2 四类攻击的预案
 
-**“这不就是 second-hit？”**
+**“这不就是 second-hit？为什么还不是 stock selective + L2 + Mooncake eviction？”**
 
-先把 second-hit 实现为公平在线基线。如果它自身 trace 的 admitted-but-not-read 与 dropped-then-demanded residual 都低于物质性阈值，项目结论就是“不需要更复杂”。只有 residual 在 value-frequency 失配坐标下稳定存在，才引入 value density。
+先把 second-hit/static gate 作为 fixed-L2 因果基线，同时构造可实际运行的 X*。one-shot waste 是 stock selective 预期能滤掉的负控制，不足以证明 L3-only residual；只有 sticky-reuse（已通过 stock selective、却低 remote value）达到物质性质量，且 O1-vs-X* 未排除机会，才允许新的 owner decision 设计候选。
 
 **“为什么不改远端淘汰？”**
 
@@ -1269,19 +1285,19 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 
 ### 20.1 证据尚未完成前
 
-> 基于 SGLang HiCache 与 Mooncake 设计多轮 Agent Prefix-DAG workload 和 KV 证据关联探针，固定 L2 write-through 并探索 shared L3 的写入准入边界；当前处于跨 worker 恢复链与 stock opportunity screen 验证阶段，conditional ledger 仅在 G2a 通过后进入实现。
+> 基于 SGLang HiCache 与 Mooncake 设计多轮 Agent Prefix-DAG workload 和 KV 证据关联探针，固定 L2 write-through 并探索 speculative Shared-L3 Publication Admission；当前处于 S1 restore-value 与 S2/S3 stock-frontier opportunity screen 验证阶段，candidate/ledger 均未获实现授权。
 
 ### 20.2 只有性能正结果完成后
 
-> 基于 SGLang HiCache 构建多轮 Agent Prefix-DAG 负载与 KV 证据关联探针，在固定 L2 write-through 的前提下实现 shared L3 写入准入，并在 2 Worker + 1 Mooncake Store 环境中对比 ADMIT_ALL、second-hit 与调优静态阈值；在 TARGET_HELD_OUT workload 下将 new physical L3 Put payload bytes 降低 X%，Goodput@TTFT-SLO 提升 Y%，并给出低复用、宽松容量和远端恢复过慢时的失效边界。
+> 基于 SGLang HiCache 构建多轮 Agent Prefix-DAG 负载与 KV 证据关联探针，在固定 L2 write-through 的前提下实现 speculative Shared-L3 Publication Admission，并在 2 Worker + 1 Mooncake Store 环境中对比 ADMIT_ALL、静态 gate 与 stock frontier X*；在 TARGET_HELD_OUT workload 下将 new physical L3 Put payload bytes 降低 X%，Goodput@TTFT-SLO 提升 Y%，并给出 one-shot 可由 X* 过滤、remote Get≈0、宽松容量和 restore 不优于 recompute 时的失效边界。
 
 ### 20.3 只有 payload / capacity efficiency 成立
 
-> 基于 SGLang HiCache + Mooncake 实现固定 L2 后的 shared L3 写入准入；在 TARGET_HELD_OUT workload 上，相对调优静态阈值将 new physical Put payload bytes 降低 X%，Goodput@TTFT-SLO 保持在预注册 non-inferiority 范围内；未观察到可信 TTFT/Goodput 提升，并量化异步写入被隐藏时的适用边界。
+> 基于 SGLang HiCache + Mooncake 实现固定 L2 后的 speculative Shared-L3 Publication Admission；在 TARGET_HELD_OUT workload 上，相对调优静态阈值与 X* 将 new physical Put payload bytes 降低 X%，Goodput@TTFT-SLO 保持在预注册 non-inferiority 范围内；未观察到可信 TTFT/Goodput 提升，并量化异步写入被隐藏时的适用边界。
 
 ### 20.4 如果静态规则胜出
 
-> 构建 SGLang HiCache + Mooncake 的双 worker 在线 lifecycle trace 与 A/B，量化 Agent Prefix-DAG 下 shared L3 准入的收益边界；实验发现调优静态 second-hit/frequency 规则的 own-arm residual 低于物质性阈值，因此按 G2a 停止、未实现 conditional ledger 或复杂 value-aware policy，并给出该结论的成立坐标。
+> 构建 SGLang HiCache + Mooncake 的双 worker 在线 lifecycle trace 与 A/B，量化 Agent Prefix-DAG 下 speculative shared-L3 publication 的收益边界；实验发现调优静态规则已足够，或 online cheating oracle 都未能物质性击败 stock frontier X*，因此按 Gate STOP、未设计复杂 candidate，并给出该结论的成立坐标。
 
 所有 X/Y 在 EXPERIMENTALLY_VALIDATED 前必须保持占位，不得写入简历。
 
@@ -1312,19 +1328,19 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 
 ### 21.2 唯一正确的下一动作顺序
 
-1. 固定 source、模型、tokenizer 与三级容量；
-2. 打通 Worker A Put → fresh Worker B Get，并分别证明 `RESTORE_PATH_PASS` 与 token-level `REMOTE_VALUE_SURVIVES`；成功 Get 或单次 TTFT 变化不能替代 prefill 减少；
-3. 在 stock、无补丁系统上先做 baseline-only calibration、冻结带 checksum 的 preregistration，再跑 `WRITE_COST_SENTINEL` 与 `CAPACITY_PRESSURE_SENTINEL`；至少一个信号区间下界越过物质性阈值才自动继续 D1；只有两者区间上界都低于阈值才按 D12 作为有效双 null 在实现前 STOP，不能称为 R/F；区间跨阈值只能 `INCONCLUSIVE`；
-4. 双 null 后只有 owner 在 D1 结果未知时另行冻结真实 payload/resource 目标、预算、物质性判据和有界 observation-only 计划，才可例外继续；该第一次授权不包含 behavior hook；
-5. 只有正常 pre-D1 ruling 或 D12 第一次例外授权允许继续时，才实施 Mooncake pre-collapse trace-only observation，并以 trace-disabled/trace-enabled oracle 证明不干扰；在此前不运行 `BYTE_RECONCILE`，不作 new-Put payload claim；
-6. 再实现完成 stock payload 归因所需的 SGLang trace-only correlation，证明 observation→operation→batch/attempt→adapter terminal 的 join 与 stock 等价；
-7. 正常 sentinel-positive 分支在 trace-only 通过后可实现 ALWAYS_ADMIT / ALWAYS_DROP / POLICY_ERROR_FAIL_OPEN 最小 hook；双-null payload 例外分支必须先证明超过预注册阈值且映射回资源目标的 new-Put/写后未读浪费，并取得第二次 owner ruling，才解锁同一最小 hook；
-8. 验证 prefix closure、dedup/race、fail-open 与 async/shutdown-detach 终态；真实 failure 不可得时保留 `INCONCLUSIVE`，不得称 G0 validated；
-9. 用受控 Prefix-DAG 跑 G2a opportunity test；
-10. 只有 G2a 通过，才实现最小 conditional ledger，并在其中实现和冻结 VALUE_DENSITY；否则以静态规则足够或无机会收口，不为补交付物建设 ledger；
-11. 只有 candidate 未被 G2b conditional replay rejection filter 拒绝，才实现 runtime candidate，并标为 IMPLEMENTED_UNVALIDATED；
-12. 只有 G3 TARGET_HELD_OUT 在线结果通过，才升级公开标题和对应的效率/性能 claim state。
+1. 租机前物化内容寻址的 pinned source/wheel/model/tokenizer/config 输入 bundle，以及单次 C0 runbook、raw capture、checksum 和 off-host handoff；OCI/OSS 只是可选交付方式，不是 correctness Gate。经 owner review 后才允许租机；
+2. 租机后、首个 request 前核验目标 host 的实际输入 hash、build/API/config、page size、stock write policy/threshold、C nonzero bounded segment、worker `global_segment_size=0` 与 private TCP。入口失败记 `BLOCKED_BEFORE_C0`，两个 C0 predicate 均为 `NOT_EVALUATED`；
+3. 用达到实际 stock write condition 的最小固定 A 请求序列取得 Put terminal；A 退出后创建 fresh B-L3，再创建 fresh B-no-L3 control。只有 token/output、coldness、A→C→B join 和 token-level reduction 同时可裁决时，才给首次 C0 填写 outcome；
+4. 首次 C0 同时满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES` 后，创建 fresh C1 cohort 并重做 C0；不得复用首次 C0 的 Store、worker state、coldness 或 artifact 作为 C1 资格；
+5. 在 C1 内 finite source/runtime audit X* 的 actual `write_through_selective` semantics、quota/adaptor wiring、metrics/prefetch threshold 和 relevant PR impact；未复核项保持 `SOURCE_TO_REVERIFY` 或从 X* construction 移除；
+6. 在 stock、无本项目 patch 的系统上完成 baseline-only calibration 和 checksum preregistration，先运行 S1 `RESTORE_VALUE_REGION`，再在 sticky-reuse 上运行 S2 `PUBLICATION_COST_ENVELOPE` 与 S3 `CAPACITY_EXTERNALITY`；one-shot 只作为 X* negative control；
+7. S1 无价值 region/remote Get≈0 则 STOP；S2/S3 只有区间下界越过物质性阈值才留下 signal，二者都以区间上界排除阈值才按 D14 在实现前 STOP；区间跨阈值只能 `INCONCLUSIVE`；
+8. 双有效 false 后仍仅允许 D12 已有、owner 在 D1 结果未知时冻结的真实 payload/resource 例外；第一次授权不包含 behavior hook；
+9. 只有 active S1–S3 ruling 或 D12 第一次例外授权允许继续时，才实施 Mooncake pre-collapse trace-only observation 与完成 stock payload 归因所需的最小 SGLang opaque correlation，并证明 trace-disabled/trace-enabled 不干扰；
+10. trace-only 通过后才实现 ALWAYS_ADMIT / ALWAYS_DROP / POLICY_ERROR_FAIL_OPEN 最小 hook，并验证 prefix closure、dedup/race、fail-open 与 async/shutdown-detach terminal；payload exception branch仍须先取得 D12 第二次 owner ruling；
+11. 用受控 Prefix-DAG 跑 G2a opportunity test，并在任何 candidate design 前，以真实在线 O1 cheating oracle vs actual X* 做 stop-only upper-bound；O1 无法物质性胜出即收口；
+12. 只有 G2a/O1 都未停止方向，才实现最小 conditional ledger；只有新的 owner decision 根据 residual 定义 candidate 后，才实现 runtime candidate 并标为 `IMPLEMENTED_UNVALIDATED`；只有 G3 `TARGET_HELD_OUT` 在线结果通过，才升级公开标题和对应效率/性能 claim state。
 
 这份规划的核心纪律是：
 
-> 先证明 shared L3 可恢复且确实替代 prefill，再用 stock sentinel 判断两条性能机会是否值得投入；只有投资筛查存活，或 D12 的真实资源目标第一次例外成立，才允许证明 trace 不干扰。双-null 例外还必须经过 observation artifact 的第二次裁决才能进入 forced admission；其后才裁决 ADMIT_ALL 浪费、静态规则 residual 与价值感知准入。
+> 先用最小 C0 证明 stock shared-L3 restore 路径和 token-level survival，再在 fresh C1 中完成 X* 审计、restore value 与 sticky-reuse publication/capacity 机会裁决；只有这些屏障未排除机会，或 D12 的真实资源目标第一次例外成立，才允许投资 trace/hook。任何 hardening 由真实 blocker 驱动，任何具体 candidate 都必须由后续 residual 重新授权。

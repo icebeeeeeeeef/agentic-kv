@@ -1,5 +1,7 @@
 # KV cache storage/serving 校招项目对抗式裁决
 
+> **历史评审归档（pre-D14 / NON-AUTHORITY）：**本文讨论的是早期 local retention/eviction、offload、FP8 与 vLLM 路线。它只保留反例、岗位信号和收窄理由；当前唯一机制、范围、Gate 与 STOP 以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14 和 [STATUS.md](../../../STATUS.md) 为准，不得据此恢复旧实现方向。
+
 > 视角：国内 AI Infra 推理团队中 KV cache storage/serving subgroup 的 TL / 技术面试官  
 > 候选人：大三、2027 校招；8–10 周；1 张 GPU，可租 3–5 台普通机器  
 > 证据截点：2026-08-05。上游事实基于当日官方文档/仓库；实施前仍需固定 commit。
@@ -240,4 +242,3 @@ P4 的最强反对意见成立：**它比 P1* 更像真正的 storage engineerin
 > 针对 `[agent/tool-pause workload]` 下 vLLM LRU 无法感知 session/range reuse 导致的 `[实测 useful eviction]`，在固定 `[vLLM commit、GPU、模型、KV 字节容量]` 上构建 block-lifecycle probe 与 calibrated replay，并实现 `[线上可见信号]` 驱动的 bounded retention policy；相对 tuned `[LRU/fixed TTL/S3-FIFO]`，在 held-out trace 下将 `[Goodput@SLO 或 p95 TTFT]` 改善 `[数值和波动]`，replay-online 误差为 `[数值]`，并报告其在 `[失败 workload]` 下的回退。
 
 若没有实测值，这不是可放进简历的完成态 bullet。
-

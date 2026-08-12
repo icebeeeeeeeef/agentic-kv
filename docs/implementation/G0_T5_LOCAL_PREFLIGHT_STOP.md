@@ -37,14 +37,15 @@ its documented preconditions on a target Linux x86_64 CUDA environment with:
    evidence, A Put/B Get join, storage-loaded evidence, output equality, and an
    identical B-cold no-L3 control proving non-zero storage-cached tokens reduce
    uncached/prefill tokens; and
-5. only after that mechanism result passes, stock/no-patch
-   `WRITE_COST_SENTINEL` and `CAPACITY_PRESSURE_SENTINEL` runs with retained
-   baseline-only service-curve knee selection, a checksummed treatment-blind
-   preregistration, Store activity, actual roomy/small segment responses, paired
-   endpoint intervals, and explicit true/false/INCONCLUSIVE signal fields. A
-   true signal requires its interval lower bound above the frozen materiality
-   threshold; a valid false requires the upper bound below it. At least one true
-   signal is required to unlock T6 by default.
+5. only after that mechanism result passes, the active D14 contract: source-audit
+   actual X* controls, preregister S1 restore-value and sticky-reuse S2/S3
+   pressure/fairness witnesses, then run those gates with retained baseline-only
+   calibration, fresh Store segment responses, paired endpoint intervals, and
+   explicit true/false/INCONCLUSIVE fields. one-shot is only an X* negative
+   control. S1 is a hard veto; S2/S3 signals require lower bounds above the
+   frozen materiality threshold, while valid false requires upper bounds below
+   it. The former `WRITE_COST_SENTINEL` / `CAPACITY_PRESSURE_SENTINEL` names are
+   historical and do not unlock T6.
 
 The command and acceptance details remain canonical in
 [G0 execution plan](G0_EXECUTION_PLAN.md#ordered-implementation-and-acceptance-tasks).

@@ -1,5 +1,7 @@
 # KV Cache 是否已经成为独立求职方向：一手来源核验
 
+> **历史 source material（NON-AUTHORITY）：**这是 2026-07-28 的岗位方向材料。其市场观察可作为背景，但不定义当前 Shared-L3 Publication Admission 的范围、Gate、实现状态或性能 claim；这些只以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14 和 [STATUS.md](../../../STATUS.md) 为准。
+
 > 核验日期：2026-07-28
 > 证据边界：只使用公司官方招聘页、官方产品/技术文档和公司或项目官方 GitHub。
 > 本文区分三件经常被混为一谈的事情：公司公开组织结构、招聘岗位名称、实际技术工作面。

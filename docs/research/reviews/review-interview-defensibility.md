@@ -1,5 +1,7 @@
 # 多轮 Agent KV Cache 项目：面试可防守性与个人 Ownership 对抗评审
 
+> **历史评审归档（pre-D14 / NON-AUTHORITY）：**本文中的 eviction、offload、FP8 与候选策略表述属于旧项目 framing。保留它用于回收反例与面试压力测试；当前项目叙事只允许派生自 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14、[STATUS.md](../../../STATUS.md) 与运行时证据。
+
 > 评审对象：用户已经冻结的项目方向，不重选赛道。  
 > 证据基础：`outputs/ai-infra-inference-campus-market-fit-2026-08-04.md` 的岗位、面经和团队动作；面经样本只用于识别追问模式，不视为市场总体概率。  
 > 评审状态：项目仍是 roadmap，尚无已实现、已测量或可复现的个人成果。  

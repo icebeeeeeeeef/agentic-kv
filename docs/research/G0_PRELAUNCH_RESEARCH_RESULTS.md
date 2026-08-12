@@ -3,10 +3,10 @@
 > 调查完成日期：2026-08-06
 > 总裁决：**G0-SOURCE BLOCKED**
 > 范围：`G0_PRELAUNCH_RESEARCH_CONTRACT.md` 的 R0–R6。本文是源码/发布物调查，不是 runtime 验证。
-> **D1 后续状态（2026-08-08）：**下述 R2/R3 的 `STOP` 只针对 adapter-visible terminal contract；
+> **D1/D14 后续状态（2026-08-10）：**下述 R2/R3 的 `STOP` 只针对 adapter-visible terminal contract；
 > [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 已固定独立的
-> pre-collapse observation 边界；[D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)
-> 进一步约束 stock pre-D1 ruling 后是否允许实际施工。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
+> pre-collapse observation 边界；[D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击)
+> 是 active pre-D1 survival ruling，D12 仅保留其窄 payload/resource 例外。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
 
 ## 结论
 
@@ -74,9 +74,10 @@ Mooncake 已兼容。
 
 下一位执行者必须从 R0 的 exact Linux GPU probe 开始，保存每个包要求的 `finding.md`、
 `evidence.md`、manifest、原始 stdout/stderr、配置与 checksum。D1 已固定若进入 payload 归因时允许在 Mooncake 的
-`OBJECT_ALREADY_EXISTS → success` 归约**之前**增加独立 trace-only observation；只有该 patch 的
+`OBJECT_ALREADY_EXISTS → success` 归约**之前**增加独立 trace-only observation；只有 D14 的 S1–S3
+investment ruling 存活，或 D12 的窄例外成立，才允许实际施工。该 patch 的
 focused test 与 trace-disabled/trace-enabled non-interference artifact 通过，R2/R3 的 new-payload
-分支才可重新评估；实际施工还必须先满足 canonical pre-D1 ruling 与 D12。此前不得把模糊 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
+分支才可重新评估；此前不得把模糊 Put success 改名后继续使用。包目录中已写入本次 source-only 结果和
 缺失 artifact。
 
 各包详情：

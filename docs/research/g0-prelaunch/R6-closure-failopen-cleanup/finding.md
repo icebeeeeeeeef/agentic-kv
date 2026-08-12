@@ -12,7 +12,8 @@ ALWAYS_DROP 行为是**待实现的 patch contract**，不是 upstream 已实现
 
 ## 后续 test 条件
 
-只接受 root/anchor + ordered hashes 的显式 decision group；首个 DROP 以后 suffix 强制 DROP。
-同时验证故意 hole、一次 policy exception 的 upstream Put terminal、DROP 的零 L3 state，及
+只接受 root/anchor + ordered hashes 的显式 decision group；一个完整 group 只能整体 `ADMIT` 或整体
+`DROP`，descendant-only 或无法证明完整性的 group 必须整体拒绝，不实现首个 DROP 后的逐页 suffix 规则。
+同时验证故意 partial-group hole、一次 policy exception 的 upstream Put terminal、DROP 的零 L3 state，及
 success/dedup/failure/shutdown 后 queue/ack/ongoing/protection 回 baseline。不能观察 terminal
 就保持 `INCONCLUSIVE`；只有 process exit 看到清理则为 `STOP` runtime policy experiments。
