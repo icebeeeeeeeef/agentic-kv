@@ -5,7 +5,7 @@
 > 路由：已由 owner 确认、会约束实现或 claim 的决议写入
 > [DECISIONS.md](../project/DECISIONS.md)；本文件只保留其讨论缘由，以及尚须由 source/runtime artifact 回答的实现问题。
 
-不要在本文重新选择 D1/D9/D10/D12，也不要在此追加新的“决议”。项目宪法仍是
+不要在本文重新选择 D1/D9/D10/D12/D14/D15/D16/D17/D18，也不要在此追加新的“决议”。项目宪法仍是
 [PROJECT_PLAN.md](../project/PROJECT_PLAN.md)，实际完成状态仍是
 [STATUS.md](../../STATUS.md)。本文不能单独升级 claim state、改变 Gate/STOP 或授权实现。
 
@@ -16,7 +16,7 @@
 | 唯一行为变化 | L2 DMA ack 后、`write_storage` 前的 L3 `ADMIT_TO_L3` / `DROP` | 已在 pinned SGLang `b058dc…` 源码核对；不修改 L1/L2、读路径、eviction 或路由。 |
 | 首轮 substrate | external pinned SGLang checkout + external pinned Mooncake checkout，小型独立 patch series | 不 vendor、不建 submodule、不建 policy framework。 |
 | Mooncake 首轮候选身份 | `v0.3.12.post1` / `6041a609a8c3af35e778f70db344f145c2914980` | 这是待验证组合，而不是“已兼容版本”。 |
-| 首轮拓扑边界 | 2 个独立 GPU worker（A/B）+ 1 个 TCP external Store（C） | 仅 C 有非零、有界 storage segment；A/B 为零 segment。 |
+| 首轮拓扑边界 | 2 个独立 worker lifecycle（A/B）+ 1 个 TCP external Store（C） | 仅 C 有非零、有界 storage segment；A/B 为零 segment。首次 C0 可在 A 退出后顺序复用同一物理 GPU，只支持 cross-process claim。 |
 | G0 不做的工作 | `VALUE_DENSITY`、L1/L2 或 L3 eviction、router、RDMA/GDR/NIXL、第二 backend、模拟器 | 这些不是解决当前 blocker 的简单办法。 |
 | hook 的失败语义 | policy 异常必须 fail-open 回到 upstream write path | 这是 G0 正确性合同，不是可选“高可用功能”。 |
 
@@ -24,10 +24,13 @@
 
 | 原讨论号 | 当前状态 | 唯一决议入口 |
 |---|---|---|
-| D1 / D2 | 已决：保留 `new_physical_put_bytes`，固定严格 trace-only pre-collapse observation 边界；实际施工受 D12 约束 | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) |
+| D1 / D2 | 已决：保留 `new_physical_put_bytes`，固定严格 trace-only pre-collapse observation 边界；实际施工受 D14 active S1–S3 ruling 或 D12 窄例外约束 | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) |
 | D9 | 已决：complete prefix group all-or-none | [D9](../project/DECISIONS.md#d9--g0-的-prefix-group-一律-all-or-none) |
 | D10 | 已决：failure/async 合同严格，failure injector 不可得为 `INCONCLUSIVE` | [D10](../project/DECISIONS.md#d10--failureasync-合同保持严格不伪造覆盖) |
-| D12 | 已决：两个 stock sentinel 有效 null 时在实现前 STOP；payload/resource 例外先 observation、后证据裁决 hook | [D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权) |
+| D12 / D14 | 已决：D12 保留有效-null与两级 payload 例外纪律；D14 以 S1–S3、X* 与 online oracle 收敛 active contract | [D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击) |
+| D15 | 已决：C0 request/coldness/token oracle 与 C1 finite-X*/S1–S3 preregistration materialization；不构成 runtime result | [D15](../project/DECISIONS.md#d15--c0c1-实验合同物化) |
+| D16 | 已决：大陆 TCP cohort 的 release staging、GPU/network preflight、archive finalizer、interruption/quarantine、retention；不构成 runtime result | [D16](../project/DECISIONS.md#d16--短生命周期-cohort-的租机前执行与证据合同) |
+| D17 / D18 | D18 取代 D17 的首次 C0 前置范围：内容寻址输入 + one-shot runbook/raw handoff；host runtime facts 租机后检查；formal lifecycle 仅按真实 blocker 后置 | [D18](../project/DECISIONS.md#d18--首次-c0-的-correctness-only-入口与-evidence-driven-hardening) |
 
 ## 历史依赖图（仅解释先后，不授权实现）
 
@@ -44,10 +47,10 @@ D3 目标 Linux/GPU 组合 → D4 stock A→B restore → D5 拓扑与隔离
                                       D10 cleanup/failure → D11 G0 exit ruling
 ```
 
-当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：stock restore + prefill survival →
-stock pre-D1 investment sentinels → 条件性 D1 observation → SGLang trace-only → behavior hook。
-`D6`–`D10` 只有 stock runtime prerequisite 与 pre-D1 ruling 通过后才能实施；两个 sentinel 都是有效 null 时
-按 D12 在实现前 STOP，不满足 R/F，也不得为了展示工程量自动开发 D1。D12 的第一次 payload/resource 例外只允许
+当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：首次 C0 → fresh C1 重做 C0 → finite X* audit
+→ baseline-only freeze + S1 restore-value → sticky-reuse S2/S3 → 条件性 D1 observation → SGLang trace-only → behavior hook。
+`D6`–`D10` 只有 active survival ruling 通过后才能实施；S1 STOP 或 S2/S3 都为有效 null 时
+按 D14 在实现前 STOP，不满足 R/F，也不得为了展示工程量自动开发 D1。D12 的第一次 payload/resource 例外只允许
 observation-only D1/opaque correlation；它不能直接授权 D8 behavior hook。
 
 ## 尚待 artifact 回答的实现问题
@@ -63,10 +66,12 @@ source-build compatibility 调查？
 **推荐：**第一轮只接受 Linux x86_64、CPython 3.11、官方
 `mooncake-transfer-engine==0.3.12.post1` wheel（已记录 SHA-256）和固定 SGLang SHA。保存 GPU、
 CUDA、driver、glibc、wheel hash、`git status --porcelain` 和启动命令。若该 wheel 不可用，标记
-wheel 分支 `STOP`，另开 source-build compatibility 子调查；不得把 source build 静默称为同一输入。
+C0 `BLOCKED_BEFORE_C0`，再由该真实 blocker 决定是否另开 source-build compatibility 子调查；不得把 source build
+静默称为同一输入。
 
 **通过后解锁：**D4。
-**停止条件：**API shape 通过但 adapter 初始化或最小 Put/Get 失败，仍是兼容性 `FAIL`，不得打 hook。
+**停止条件：**API shape 通过但 adapter 初始化或 A Put 前 admission 失败，仍是 `BLOCKED_BEFORE_C0`；不得写成
+C0 `FAIL/STOP`，也不得打 hook。
 
 ### D4 — stock A Put → fresh B Get 的最小因果证明如何定义？
 

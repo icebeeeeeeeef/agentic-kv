@@ -27,6 +27,30 @@ PASS 只能支持它实际覆盖的主张，不能自动升级完整 G0 或性�
 
 ## Required current questions
 
+### Q: 为什么还需要 Shared-L3 Publication Admission，而不是 stock selective + L2 + Mooncake eviction？
+
+**Decision state：** `DECIDED`（D14）
+**Claim state：** `ROADMAP`；其中 stock quota/adaptor wiring、exact selective semantics 和 PR/production细节为 `RESEARCH_REVIEW / SOURCE_TO_REVERIFY`。
+
+**短回答：** 本项目不预设 L3-only gate 必然有价值。最强简单替代是 X*：stock `write_through_selective`、足够 L2 和所有实际可用的 stock quota/eviction controls。它虽然改变 L2 treatment，不能混成 L3-only 因果基线，却必须作为替代攻击被正面比较。独立 gate 的唯一待测 residual 是 sticky-reuse：本地复用足以通过 stock selective、却很少被远端读取的 speculative publication；one-shot/unique-heavy 预期应由 X* 在 seam 前过滤，不能支撑本项目。
+
+**证据边界：** 当前只在 fixed SGLang source 中验证了 L2 ack 后、`StorageOperation` 前的 seam；还没有本项目 runtime trace 证明 sticky-reuse mass、X* 可构造或 quota 已可用。外部讨论中的 PR、阈值、eviction 或 production 说法未被独立复核，不是 `SOURCE_VERIFIED`。
+
+**反例与 trade-off：** 若 X* 构造后已经相当或更好，或者仅在独立 `ORACLE_EVAL` split 读取 future label 的 online cheating oracle 也无法物质性击败它，按 D14 STOP。这个 oracle 即使获胜也只说明存在未排除机会，不能证明 Agent hint、`VALUE_DENSITY` 或任意候选有效，更不能污染 TARGET_HELD_OUT。
+
+**不能声称：** “stock selective 必然不够”“Mooncake eviction 必然较差”或“sticky-reuse 已在真实 agent workload 中证明”。
+
+### Q: speculative publication 与 intent-coupled publication 如何区分？
+
+**Decision state：** `DECIDED`（D14）
+**Claim state：** `ROADMAP`
+
+**短回答：** 当前 hook 只裁量 L2 已可用、但尚无已证实远端需求的 speculative/opportunistic publication。当前 mainline 中经本项目 source-verified 的 intent-coupled set 为空。若未来出现明确交付/复用 intent，它必须 direct-admit 或先通过新计划定义可测试的 priority 语义；不能悄悄走 speculative `DROP`。
+
+**反例与 trade-off：** 预先设计 intent RPC、priority scheduler 或通用 policy service只会给空集增加控制面；现阶段不做。这个边界不代表已经集成或实现了 SGLang Agentic KV，后者只是潜在 complement/workload producer。
+
+**不能声称：** “项目已经支持 Agentic KV intent”或“intent path 已经被测试”。
+
 ### Q: 这会不会只是一个 `decide()` 函数加参数扫描？
 
 **Claim state：** `SOURCE_VERIFIED + ROADMAP`
@@ -40,8 +64,8 @@ patch 尚未实现，因此不能说已经拥有 runtime 工程成果。
 [minimum ownership/deletion oracle](PROJECT_PLAN.md#34-工程最低交付与反向删除测试)。
 
 **反例与 trade-off：** 如果项目已经通过投资筛查，但删除 benchmark 后只剩阈值函数，R 层即失败；解决办法
-不是增加 policy framework，而是完成已有生命周期与观测合同。若两个 stock sentinel 在有效坐标下均为 null，
-则按 D12 在 owned patch 前 STOP，不能为了凑 R 层继续施工。
+不是增加 policy framework，而是完成已有生命周期与观测合同。若 S1 STOP，或 S2/S3 在有效坐标下均为 null，
+则按 D14 在 owned patch 前 STOP，不能为了凑 R 层继续施工。
 
 **不能声称：** “已经实现了分层 KV cache / Mooncake transfer”或“策略已带来收益”。
 
@@ -53,7 +77,7 @@ patch 尚未实现，因此不能说已经拥有 runtime 工程成果。
 关联。先加 behavior hook 会混淆观测回归与机制回归；所以先在不计算/应用 action 的条件下，用 opaque
 `observation_id` 证明 trace-disabled/trace-enabled 行为等价，之后才允许写 `ALWAYS_*` hook。
 
-**证据：** [trace-first order](PROJECT_PLAN.md#212-唯一正确的下一动作顺序)、
+**证据：** [active execution order](PROJECT_PLAN.md#212-唯一正确的下一动作顺序)、
 [trace-only acceptance](../implementation/G0_EXECUTION_PLAN.md#task-3-add-trace-only-correlation-and-prove-it-is-inert)。
 
 **反例与 trade-off：** trace 改变 key、队列、Put/Get result、输出或 cleanup 时，必须 STOP/revert trace
@@ -105,37 +129,31 @@ reason。
 
 **Claim state：** `SOURCE_VERIFIED + ROADMAP`
 
-**短回答：** D1 和 hook 是 admission-specific 投资，不应先于问题存在性。`REMOTE_VALUE_SURVIVES` 通过后，
-先用 stock 系统运行两个粗粒度 sentinel：zero-reuse、roomy L3、service-curve knee 下的
-`WRITE_COST_SENTINEL` 检查最坏浪费下的整条 L3 path cost 能否传导到前台；复用流 + one-shot fill 流、fresh roomy/small Store 下的
-`CAPACITY_PRESSURE_SENTINEL` 检查 bounded capacity 是否降低 query-time availability 并增加 prefill。至少一项
-留下稳定端到端信号，才自动继续 D1。
+**短回答：** D1 和 hook 是 admission-specific 投资，不应先于问题存在性。先让 S1 验证 restore-vs-recompute 的可裁决价值区域；再让 S2 在会通过 stock selective 的 sticky-reuse publication 流量上验证 publication-cost envelope，让 S3 在 shared-prefix + sticky background 的 bounded L3 中验证 capacity externality。one-shot/unique-heavy 只能是 X* 预期过滤的负控制，不能让任一 gate 通过。只有 active survival contract 留下稳定端到端信号，才自动继续 D1。
 
 执行前先做 treatment-blind preregistration：knee 只由 L2_ONLY service curve 选择，roomy/small 按冻结的 KV payload
 估算关系构造，并冻结 TTFT-SLO、物质性阈值、paired-run 区间方法和有限重复预算。`true` 要求区间下界越过阈值；有效
 `false` 要求区间上界低于阈值。三次重复或 p-value 不显著都不是 null oracle。
 
-**证据：** [pre-D1 investment contract](PROJECT_PLAN.md#d1-投资前的-stock-survival-sentinels)、
-[stock sentinel procedure](../implementation/G0_EXECUTION_PLAN.md#task-2-run-stock-pre-d1-investment-sentinels)。
+**证据：** [active S1–S3 contract](PROJECT_PLAN.md#s1s3当前-survival-contract)、
+[active survival procedure](../implementation/G0_EXECUTION_PLAN.md#active-task-2-prepare-and-run-d14-s2s3-survival-gates)。
 
-**反例与 trade-off：** backend 开/关同时改变 Put 与 lookup/miss，容量大小对照也看不到具体 eviction；因此
-`WRITE_COST_SENTINEL` 不能单独归因写成本，两个 sentinel 都只能筛查“有没有值得进一步归因的信号”，不能证明 admission 有效。两项都以区间排除规则成为有效 null 时才在 owned patch 前 STOP，且不满足 R/F；如果关键压力/公平条件不可证，或冻结预算后区间仍跨物质性阈值，只能记为 `INCONCLUSIVE`。不能把 runtime 工程量或“更深负结果”本身当作问题价值。
+**反例与 trade-off：** S2/S3 都不是 admission proof，缺少 telemetry 时也看不到具体 eviction。S1 在可裁决 region 内 restore 不优于 recompute、remote Get≈0，或 S2/S3 都以区间排除规则成为有效 false 时，均在 owned patch 前 STOP，且不满足 R/F；关键压力/公平条件不可证，或冻结预算后区间仍跨物质性阈值，只能记为 `INCONCLUSIVE`。不能把 runtime 工程量或“更深负结果”本身当作问题价值。
 
 **不能声称：** 当前尚无目标 Linux runtime artifact，不能说写争用或容量压力已经存在；D1 未完成前也不能把
 NIC 流量或 submitted bytes 称为 `new_physical_put_bytes` 或 payload-efficiency。
 
-### Q: 两个 stock sentinel 都是有效 null，为什么不继续把 runtime backbone 做完？
+### Q: S2/S3 都是有效 null，或 S1 不存在 restore-value region，为什么不继续把 runtime backbone 做完？
 
-**Decision state：** `DECIDED`（D12）
+**Decision state：** `DECIDED`（D12 + D14）
 
 **Claim state：** `ROADMAP`
 
-**短回答：** Runtime backbone 是“若要称为 runtime flagship 的最低工程线”，不是无条件施工承诺。两个
-sentinel 在预注册压力坐标下都以效应区间上界低于物质性阈值成为有效 null，说明当前 admission 的两条性能收益链都没有留下可行动投资信号；此时继续
-写 D1/hook 只为补工程量，会失去真实目标函数。项目按 D12 在 owned patch 前 STOP，保留 characterization 和
+**短回答：** Runtime backbone 是“若要称为 runtime flagship 的最低工程线”，不是无条件施工承诺。S2/S3 在预注册 pressure coordinate 下都以效应区间上界低于物质性阈值成为有效 null，说明当前 sticky-reuse publication 的两条机会链都没有留下可行动投资信号；S1 若无 restore-value region 更早 STOP。此时继续
+写 D1/hook 只为补工程量，会失去真实目标函数。项目按 D12/D14 在 owned patch 前 STOP，保留 characterization 和
 方向筛查负结果，但不称为 R/F。
 
-**证据：** [D12 staged STOP](DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)、
+**证据：** [D14 active STOP](DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击)、
 [completion boundary](PROJECT_PLAN.md#32-三层完成定义)。
 
 **反例与 trade-off：** 如果在 D1 结果未知时已经存在真实带宽/Store CPU/容量/成本或单位资源服务目标，owner
@@ -154,8 +172,8 @@ runtime flagship。没有区间排除能力的“不显著”结果不能叫双 
 **短回答：** G1 要证明的是“真实运行发生了什么能否被可信记录”，所以保留 workload replayability、在线
 trace/correlation、non-interference、payload reconciliation 和 workload split。conditional ledger 固定一条
 source-run eligibility stream 后离线回放其他 policy；真实 policy 会改变后续 L3 hit、L2 fill、recompute 和新的
-eligibility，因此 ledger 不能替 G2a 证明在线机会。只有 G2a 已用各 arm 自己的 lifecycle trace 证明 residual，才
-值得在 G2b 实现 ledger，拒绝动作差异太小或依赖错误模型的候选。
+eligibility，因此 ledger 不能替 G2a 或 O1-vs-X* 证明在线机会。只有 G2a 和 online oracle 都未停止方向，才
+值得在 G2b 实现 ledger，拒绝动作差异太小或依赖错误模型的候选；`VALUE_DENSITY` 不再是默认交付。
 
 **证据：** [D13](DECISIONS.md#d13--conditional-ledger-仅在-g2a-通过后实现)、
 [activation gate](PROJECT_PLAN.md#90-activation-gate)、[G2b contract](PROJECT_PLAN.md#g2bconditional-replay-rejection-filter)。
@@ -214,6 +232,32 @@ injector 不可得时只能是 `INCONCLUSIVE`，不能靠 mock 或进程退出�
 不是新增 cancellation registry/epoch state machine 的理由。
 
 **不能声称：** 当前未运行 G0 matrix，不能声称这些终态已经全部通过。
+
+### Q: 为什么首次 C0 不把 Docker/OCI、OSS 和自动归档当 correctness Gate？
+
+**Decision state：** `DECIDED`（D18；D16 只保留为后续 formal-cohort hardening）
+
+**Claim state：** `ROADMAP`
+
+**短回答：** C0 correctness 只依赖输入身份不漂移、A/C/B 与 no-L3 control 的隔离和 join、token/output oracle，
+以及原始证据离开短命实例。内容寻址 source/wheel/model/tokenizer/config bundle、目标 host 使用前的 checksum 和一次
+人工 raw-bundle/checksum/off-host copy 已经满足这三点。Docker/OCI 与 OSS 只是交付选择；自动 collector/classifier、
+finalizer、deadline/quarantine 和完整 abort lifecycle 不增加首次 C0 的判别力，反而会在看到真实 blocker 前扩大平台面。
+
+target Linux/CUDA、build/API、实际 write threshold、GPU、Store segment 和 private TCP 只能租机后验证。它们失败时
+记录 `BLOCKED_BEFORE_C0`、两个 predicate `NOT_EVALUATED`，不能把“环境没跑起来”伪装成 shared-L3 `FAIL/STOP`。
+一旦真实 C0 `PASS`，C1 仍须 fresh cohort 重做 C0；代码可以复用，环境状态和资格 artifact 不能复用。
+
+**证据：** [D18](DECISIONS.md#d18--首次-c0-的-correctness-only-入口与-evidence-driven-hardening)、
+[pre-rental execution contract](../implementation/G0_PRE_RENTAL_EXECUTION_CONTRACT.md)。
+
+**反例与 trade-off：** 如果首次运行真实暴露跨境下载不稳定、人工归档易漏或重复执行造成误判，就按该具体 failure
+增加最小 staging、capture 或 finalization；不能因为“未来也许重复很多次”提前建设 registry/orchestration platform。
+另一方面，checksum、A Put terminal、B cold certificate、A→C→B join、fresh no-L3 control 和 deterministic output
+oracle 不能删，因为删掉会产生假结论或不可复核证据。
+
+**不能声称：** 目前没有已物化 input bundle/runbook、target-host probe、cloud/runtime artifact 或 C0 结果；D18 不是
+`READY_TO_RENT`，也不能声称自动部署、自动归档、cross-GPU/multi-host 或生产适用性。
 
 ## Question template
 

@@ -1,5 +1,7 @@
 # 拟选 KV Cache 项目的市场与岗位信号：独立反方评审
 
+> **历史评审归档（pre-D14 / NON-AUTHORITY）：**本文的 local retention/eviction、offload 与 FP8 项目建议已被 current Shared-L3 Publication Admission scope 取代。它只保留市场反例和岗位依据；当前执行与 claim 以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14、[STATUS.md](../../../STATUS.md) 为准。
+
 > 评审日期：2026-08-04
 >
 > 目标：2027 届国内 AI Infra 推理 / LLM Serving / KV Cache 相关校招

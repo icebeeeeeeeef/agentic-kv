@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
-  "artifact_type": "g0_stock_sentinel_preregistration",
-  "contract_state": "DRAFT",
+  "artifact_type": "historical_d12_stock_sentinel_preregistration",
+  "contract_state": "HISTORICAL_SUPERSEDED_BY_D14_DO_NOT_RUN",
+  "superseded_by": "experiments/manifests/d14-survival-preregistration.example.json",
   "frozen_at_utc": null,
   "frozen_before_treatment_results": true,
   "checksum_sidecar": "preregistration.json.sha256",

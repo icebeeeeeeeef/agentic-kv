@@ -1,5 +1,9 @@
 # 上游重叠与可行性审查（截至 2026-08-05）
 
+> **HISTORICAL / NON-AUTHORITY（pre-D14）。** 本文保留 2026-08-05 的早期 source scan 和候选讨论，不能定义当前 Gate、workload、candidate 或 claim。当前唯一 canonical contract 是 [D14](../../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击) 及 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)。
+>
+> 文中从 mutable `main`、外部 issue/PR、benchmark 或讨论得到的阈值、绑定语义和性能说法一律只是 `RESEARCH_REVIEW / SOURCE_TO_REVERIFY`，不是 `SOURCE_VERIFIED` 或实验结论。
+
 ## 结论
 
 - 四个原始题目均不宜原样作为 8–10 周旗舰项目：P1 的评价口径不成立，P2/P4 与成熟上游高度重复，P3 的尾延迟机制是老问题且不够贴 KV storage。
@@ -15,11 +19,13 @@
 - 官方文档已经把 `write_through_selective` 定义为命中计数阈值策略，所以不能把“selective write”本身声称为新贡献：[HiCache 设计文档](https://sgl-project.github.io/advanced_features/hicache_design.html)
 - 官方高优先级 roadmap 明确指出 agentic workload 下 storage/transfer bottleneck，并列出 direct L3、agent-aware scheduling、storage prefetch、storage group visibility/eviction 等工作：[SGLang #21846](https://github.com/sgl-project/sglang/issues/21846)
 
-这足以证明“源码级候选缺口”，但不足以证明“官方确认缺口”。开工前必须以 issue/maintainer response 确认它没有被已有 PR 或近期 roadmap 子任务覆盖。
+这是当时的“源码级候选缺口”假设，仍不足以证明“官方确认缺口”。当前必须按 D14 对 pinned source/runtime 复核，而不能用本文或当时的 issue/maintainer response 代替。
 
-## 建议的最小机制
+## 历史建议的最小机制（已冻结，不授权实现）
 
-只加一个 `L3AdmissionPolicy` 边界：L2 backup 完成后，基于 **连续前缀组** 的第二次复用证据和实测成本决定是否 enqueue L3 write：
+下列内容只记录早期候选如何形成；它不是批准的 `L3AdmissionPolicy`，也不授权 second-hit sketch、动态成本估计或任何 policy 实现。D14 已冻结 Agent hint、`VALUE_DENSITY`、page-level admission、router 与 eviction，直到在线 residual 和新的 owner decision 出现。
+
+早期文字曾设想：L2 backup 完成后，基于**连续前缀组**的第二次复用证据和实测成本决定是否 enqueue L3 write：
 
 `admit iff predicted_saved_prefill_time > measured_L3_write_cost + predicted_L3_read_cost`
 

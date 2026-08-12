@@ -1,5 +1,7 @@
 # SOP hard-gate evidence for P1-P4
 
+> **Historical review archive (pre-D14 / NON-AUTHORITY):** P1–P4 are earlier candidate directions, not current project scope. Retain this file only for upstream/prior-art counterevidence. The active Shared-L3 Publication Admission contract is [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md), D14, and [STATUS.md](../../../STATUS.md).
+
 Checked 2026-08-05. This note distinguishes an upstream problem from the exact proposed mechanism; an adjacent open issue is not enough to pass the gate.
 
 ## P1: libCacheSim KV-cache policy replay

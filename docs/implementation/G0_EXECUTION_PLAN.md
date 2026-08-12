@@ -1,8 +1,8 @@
 # G0 Runtime Closure Implementation Plan
 
-**Goal:** turn the SOURCE_VERIFIED SGLang seam into a minimal, auditable two-worker runtime proof, or stop with retained failure artifacts.
+**Goal:** turn the SOURCE_VERIFIED SGLang seam into a minimal, auditable two-worker-lifecycle runtime proof, or stop with retained failure artifacts.
 
-**Architecture:** use two independently cold GPU SGLang workers and one external Mooncake Store. Keep L1/L2 write-through upstream. After stock restore and prefill survival, run two stock/no-patch investment sentinels for a visible whole-L3 path-cost envelope and bounded-capacity pressure. Only a surviving sentinel automatically unlocks the Mooncake D1 observation and SGLang opaque trace correlation; only after those are inert may one fail-open decision be added just before `write_storage`. The external store is the only L3 memory contributor and uses TCP.
+**Architecture:** use two independently cold SGLang worker lifecycles and one external Mooncake Store. First C0 may run A and B sequentially on one physical GPU after A exits; this proves cross-process restore only. Keep L1/L2 write-through upstream. After C0 `PASS`, a fresh C1 cohort must redo C0, source/runtime-audit a finite X*, complete baseline-only freeze and establish `S1 RESTORE_VALUE_REGION`, then sticky-reuse `S2 PUBLICATION_COST_ENVELOPE` and `S3 CAPACITY_EXTERNALITY`. The old one-shot `WRITE_COST_SENTINEL` / `CAPACITY_PRESSURE_SENTINEL` procedure below is retained as superseded history and must not run. Only a surviving active contract (or D12's narrow payload exception) unlocks Mooncake D1 observation and SGLang opaque trace correlation; only after those are inert may one fail-open decision be added just before `write_storage`. The external store is the only L3 memory contributor and uses TCP.
 
 **Tech Stack:** SGLang `b058dc910619c9d4bce9e9e24117104ffc491fa6`; Mooncake release candidate `v0.3.12.post1` (`6041a60` release commit prefix); Python; CUDA GPU workers; Mooncake TCP Store; JSONL artifacts.
 
@@ -12,21 +12,23 @@ does not decide target-Linux compatibility, but it blocks T6/T7 on that executor
 Linux CUDA run must re-execute every precondition below rather than treating this record as a
 partial deployment.
 
+**Pre-rental boundary:** the first C0 follows [D18's minimal execution contract](G0_PRE_RENTAL_EXECUTION_CONTRACT.md): materialize content-addressed inputs plus a one-shot runbook/raw-capture/off-host handoff, then verify target-host build/API/config/write-trigger/GPU/Store/private-TCP facts only after rental and run Task 1 immediately. OCI/OSS are optional delivery mechanisms. Formal finalization, automatic classification and lifecycle controls are later hardening, not first-C0 prerequisites. This cannot weaken either Task 1 predicate.
+
 ---
 
 ## Preconditions and hard admission checks
 
-| Item | Required value / check | STOP if not true |
+| Item | Required value / check | Required response if not true |
 |---|---|---|
-| SGLang | checkout resolves exactly to `b058dc910619c9d4bce9e9e24117104ffc491fa6` | Do not apply patches or collect data. |
-| Mooncake | checkout tag is `v0.3.12.post1`; record full `git rev-parse HEAD`; installation reports `0.3.12.post1`; retain wheel/source-build SHA-256 | The tag does not resolve, version differs, or build API probe fails. |
-| Mooncake build | First probe uses the published Linux x86_64 CPython 3.11 wheel `mooncake-transfer-engine==0.3.12.post1` with SHA-256 `8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439`; there are no local CMake flags in this probe | The target cannot use this exact wheel. Do not silently substitute a source build or another wheel. |
-| GPU layout | one compatible CUDA GPU visible on A and B; A and B are distinct processes; TP=PP=DP=DCP=1 | Do not use TP/PP/DP/DCP as a substitute for two workers. |
-| Model | dense, non-hybrid model and tokenizer revision are immutable in the manifest; the same model/tokenizer hashes are visible on A and B | No floating model revision or differing tokenizer. |
-| Cache | HiRadixCache is asserted from startup output; Unified Radix Tree disabled; one fixed page size and L1/L2 capacities | Any fallback cache implementation or a per-arm L1/L2 configuration change. |
-| L3 | C is the only non-zero `global_segment_size`; A/B each use `0`; C's bounded segment is observable via the Mooncake health/segment endpoint | The workers contribute memory or C has zero/no segment. |
-| Transport | `MOONCAKE_PROTOCOL=tcp`, blank device, no RDMA/GDR/NIXL flags | Do not broaden G0 to another data path. |
-| New-Put payload attribution | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) defines the only allowed pre-collapse Mooncake trace-only observation; its implementation is still gated by the pre-D1 ruling and [D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权). | Do not implement it after a valid double-null without D12's first-stage resource-objective record; never run `BYTE_RECONCILE` or make payload-efficiency claims until the patch and its trace-disabled/trace-enabled non-interference oracle pass. |
+| SGLang | checkout resolves exactly to `b058dc910619c9d4bce9e9e24117104ffc491fa6` | `BLOCKED_BEFORE_C0`; do not apply patches or collect predicate data. |
+| Mooncake | checkout tag is `v0.3.12.post1`; record full `git rev-parse HEAD`; installation reports `0.3.12.post1`; retain wheel/source-build SHA-256 | `BLOCKED_BEFORE_C0`; retain probe logs. |
+| Mooncake build | First probe uses the published Linux x86_64 CPython 3.11 wheel `mooncake-transfer-engine==0.3.12.post1` with SHA-256 `8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439`; there are no local CMake flags in this probe | `BLOCKED_BEFORE_C0`; do not silently substitute a source build or another wheel. |
+| GPU layout | one compatible CUDA GPU; A and B are distinct, non-overlapping lifecycles with independent writable state; TP=PP=DP=DCP=1 | `BLOCKED_BEFORE_C0`; do not use TP/PP/DP/DCP as a substitute for two worker lifecycles. |
+| Model | dense, non-hybrid model and tokenizer revision are immutable in the manifest; the same model/tokenizer hashes are visible on A and B | `BLOCKED_BEFORE_C0`; no floating model revision or differing tokenizer. |
+| Cache | HiRadixCache is asserted from startup output; Unified Radix Tree disabled; one fixed page size and L1/L2 capacities | `BLOCKED_BEFORE_C0` for C0; do not accept fallback cache or per-arm L1/L2 changes. |
+| L3 | C is the only non-zero `global_segment_size`; A/B each use `0`; C's bounded segment is observable via the Mooncake health/segment endpoint | `BLOCKED_BEFORE_C0`; workers must not contribute memory and C must not be zero-segment. |
+| Transport | `MOONCAKE_PROTOCOL=tcp`, blank device, no RDMA/GDR/NIXL flags | `BLOCKED_BEFORE_C0`; do not broaden G0 to another data path. |
+| New-Put payload attribution | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) defines the only allowed pre-collapse Mooncake trace-only observation; its implementation is gated by the active S1–S3 ruling in [D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击) or D12's narrow payload exception. | Do not implement it after D14's valid opportunity STOP without D12's first-stage resource-objective record; never run `BYTE_RECONCILE` or make payload-efficiency claims until the patch and its trace-disabled/trace-enabled non-interference oracle pass. |
 
 ### Topology and canonical per-run configuration
 
@@ -35,7 +37,7 @@ GPU Worker A (cold only at run start)  -- TCP -->  External Mooncake Store C
 GPU Worker B (fresh / cold before probe) -- TCP -->  master + metadata + Store C
 ```
 
-Use one master and one metadata service on C (they may be co-located) and one external store service with a non-zero, bounded segment. `A_HOST`, `B_HOST`, and `C_HOST` below are three resolved DNS/IP names recorded in the manifest; they are not runtime defaults.
+Use one master and one metadata service on C (they may be co-located) and one external store service with a non-zero, bounded segment. A/B are logical lifecycles and may share one recorded worker host/GPU sequentially for first C0; `A_HOST` may therefore equal `B_HOST`. `C_HOST` is the independently recorded Store endpoint. These names are not runtime defaults.
 
 ```bash
 export SGLANG_SHA=b058dc910619c9d4bce9e9e24117104ffc491fa6
@@ -72,7 +74,7 @@ print("MOONCAKE_API_SURFACE_OK")
 PY
 ```
 
-Pass: exact SGLang SHA, tag-resolved Mooncake full SHA beginning `6041a60`, version/build hash, and API surface recorded. Fail: any mismatch or error. Inconclusive: services cannot be reached. STOP: do not label a release compatible solely from tag/API shape; retain logs and the failure manifest.
+Pass: exact SGLang SHA, tag-resolved Mooncake full SHA beginning `6041a60`, version/build hash, and API surface recorded. Any mismatch, error or unreachable service before a request is `BLOCKED_BEFORE_C0`, not a C0 outcome. Do not label a release compatible solely from tag/API shape; retain logs and the attempt manifest.
 
 ## File and patch boundaries
 
@@ -96,20 +98,50 @@ Do not vendor either upstream checkout, add a submodule, modify a read path, alt
 
 ### Task 1: establish stock external-store recovery and prefill survival
 
-- [ ] Start C with an isolated bounded segment and save configuration, process logs, health response, and full committed source/build identities.
-- [ ] Start stock pinned A and B with identical model/tokenizer/cache configuration and `global_segment_size=0`.
-- [ ] Send a page-aligned shared prefix to A; wait for its upstream L3 write completion; stop/restart or otherwise prove B has empty local L1/L2; issue the same prefix to B.
+The exact C0 request construction, coldness certificate, evidence joins and classification table are
+frozen in the [C0 Restore Qualification Contract](G0_C0_RESTORE_QUALIFICATION_CONTRACT.md). It
+implements this Task 1 oracle and cannot relax it.
+
+For the first target run, use only the one-shot C-host and worker commands from D18. Manual fail-fast execution is enough;
+do not require an independent collector/classifier, C1 runner, general orchestrator or formal abort/finalizer machinery.
+
+- [ ] Complete the target admission probe: verify content hashes, build/API/config, actual page size, stock write policy/threshold, one GPU, C health/nonzero segment, worker zero-segment and private TCP. If any item fails, record `BLOCKED_BEFORE_C0` and do not evaluate either predicate.
+- [ ] Start fresh C/unique keyspace and save configuration, process logs, health response, source/build identities; A is the sole writer for this run.
+- [ ] Start stock pinned A with the frozen model/tokenizer/cache configuration and `global_segment_size=0`; run the minimal fixed request sequence that reaches the verified write condition and save terminal Put.
+- [ ] Save A exit, then start fresh B-L3 with identical static configuration, empty request ledger, independent writable state, no persistent local cache and `global_segment_size=0`. A/B may sequentially use the same GPU.
+- [ ] Issue the identical page-aligned raw prompt/token sequence to B and close the A→C→B join using fresh C/keyspace, A sole-writer/Put terminal and B Get/load evidence.
 - [ ] For the L3 arm, request the pinned runtime's cache-source breakdown and preserve B's `cached_tokens_details.storage`, total `cached_tokens`, `prompt_tokens`, and derived `uncached_prompt_tokens = prompt_tokens - cached_tokens` together with Mooncake adapter/Get evidence.
-- [ ] Run the identical fixed-decode request on a separately fresh B-cold no-L3 control. Preserve the same token-accounting fields and output hash. This is a token-level mechanism control, not a TTFT/Goodput performance claim.
+- [ ] Run the identical deterministic-greedy request on a separately fresh B-cold no-L3 control. Preserve the same token-accounting fields, at least one completion token and output hash. This is a token-level mechanism control, not a TTFT/Goodput performance claim.
+- [ ] Before release, inventory/checksum the raw C0 bundle, copy it off-host and verify the copied checksum.
 
 Record two outcomes rather than collapsing them into one:
 
 - `RESTORE_PATH_PASS`: A has successful Put evidence, B is locally cold before the request, B records successful remote Get/loaded storage pages, and fixed-decode output equals the no-L3 control.
 - `REMOTE_VALUE_SURVIVES`: `RESTORE_PATH_PASS` already holds, `cached_tokens_details.storage > 0`, and the L3 arm has fewer uncached/prefill tokens than the identical B-cold no-L3 control. TTFT may be retained as a diagnostic but is not a substitute for this token-level oracle and is not yet a performance claim.
 
-Pass: both outcomes hold. Fail/STOP: B cannot restore, outputs differ, or the path works but does not reduce any uncached/prefill tokens; do not implement D1/trace/hook and preserve all raw artifacts. Inconclusive: local coldness, remote Get, cache-source breakdown, or the comparable token counts cannot be proven; do not upgrade Task 1 or continue to Task 2.
+No A terminal Put after the verified trigger sequence means `BLOCKED_BEFORE_C0`, not a restore failure. Once the request chain is executed: `PASS` only when both predicates hold. `FAIL` when B cannot restore, outputs differ, or a verified restore does not reduce uncached/prefill tokens; its next action is `STOP`, so do not implement D1/trace/hook and preserve all raw artifacts. `INCONCLUSIVE` when local coldness, remote Get, cache-source breakdown, output or comparable token counts cannot be proven; do not upgrade Task 1 or continue to Task 2. Never write two values into one `gate_outcome`.
 
-### Task 2: run stock pre-D1 investment sentinels
+`REMOTE_VALUE_SURVIVES` is necessary but is not the full D14 S1 ruling. Before any D1 work, the next target-Linux execution must create a treatment-blind S1 preregistration that defines the target workload/load/capacity coordinates, final endpoint, materiality/interval rule, B-cold recompute control and remote-Get materiality floor. If all covered, decisive target coordinates show `restore <= recompute`, or remote Get is approximately zero, record `STOP`; insufficient precision or missing comparability remains `INCONCLUSIVE`.
+
+### Active Task 2: prepare and run D14 S2/S3 survival gates
+
+The treatment-blind C1 freeze order, S1 endpoint, finite X* audit surface, sticky-reuse evidence
+and S2/S3 interpretation are frozen in the [D14 Survival Preregistration Contract](G0_D14_SURVIVAL_PREREGISTRATION_CONTRACT.md).
+It implements D14 and cannot alter its Gate/STOP.
+
+Before any X* audit or calibration, create a fresh C1 cohort and rerun the full C0 oracle. C1 may reuse runbook/launcher code,
+but never first-C0 Store/worker state, coldness or eligibility artifacts. A failed C1 C0 blocks the remaining C1 stages.
+
+Do not copy the historical Task 2 manifest without revision. Before viewing treatment data:
+
+- source-audit the pinned stock `write_through_selective` behavior, usable quota/eviction controls, adapter wiring and relevant metrics/prefetch semantics; record unresolved details as `SOURCE_TO_REVERIFY`, not `SOURCE_VERIFIED`;
+- construct only the actually verified portion of X* = stock selective + sufficient L2 + usable stock controls; preserve configuration/effect evidence and do not pretend an unconfigured quota exists;
+- freeze sticky-reuse operational criteria: it must pass stock selective's locally observed condition yet have low remote value over fixed H; record its estimated/observed publication mass. one-shot remains an X* negative control only;
+- preregister S2 pressure witnesses, S3 bounded-capacity/shared-prefix witnesses, endpoint, `delta`, paired interval method, run isolation, repeat budget and stop rules. S1 is a hard veto; S2/S3 become valid false only when all witnesses hold and the interval upper bound is below `delta`.
+
+S2/S3 cannot use offline replay to infer TTFT/Goodput. If both are valid false, record the D14 pre-implementation STOP. If either is `INCONCLUSIVE`, do not reinterpret it as a null; if either signals, it authorizes only trace-path investment, not a candidate. The online cheating oracle-vs-X* comparison comes later on the real runtime path and is stop-only.
+
+### Historical Task 2: old D12 stock pre-D1 investment sentinels (superseded; do not execute)
 
 Use only the stock pinned builds that passed Task 1. These are coarse system-level survival probes, not admission treatments, not a new Gate, and not substitutes for G2a/G3.
 
@@ -157,7 +189,7 @@ Pass: deterministic joins exist from observation through operation/batch/physica
 
 ### Task 4: add the minimal fail-open binary hook
 
-Prerequisite: the normal sentinel-positive branch has a passing Task 3, or the D12 double-null exception has both a passing observation-only artifact and a second owner ruling. A first-stage payload/resource exception never authorizes this task by itself.
+Prerequisite: the active S1–S3 surviving branch has a passing Task 3, or the D12 payload exception has both a passing observation-only artifact and a second owner ruling. A first-stage payload/resource exception never authorizes this task by itself.
 
 - [ ] Write a failing unit test whose policy returns `DROP`; after `_finish_write_through_ack`, assert CPU/L2 event exists and `write_storage` was not called.
 - [ ] Implement the policy call only after `top`, `key`, `hash_value`, `host_value`, and `prefix_keys` are ready and before `cache_controller.write_storage`.
@@ -192,16 +224,22 @@ Run every scenario in a fresh C instance or a truly capacity-isolated namespace;
 
 ## Raw artifact and manifest contract
 
-Each attempt writes an immutable directory under ignored `experiments/runs/<run_id>/` containing:
+Each attempt writes an immutable directory under ignored `experiments/runs/<run_id>/`. Every attempt contains only the common
+identity/execution subset plus artifacts required by the stage actually run; absence of a future-stage artifact is not a C0 failure.
 
-- `manifest.json`; source SHAs, resolved Mooncake tag/SHA/version/wheel-or-build SHA-256, model/tokenizer revisions/hashes, hardware/driver, environment, topology, endpoint configs, cache values, policy and patch commits;
-- A/B/C stdout/stderr, exact launch commands, health/segment endpoint responses before/after, worker-local monotonic event logs, and per-request prompt/cached/storage-cached/uncached token accounting for restore controls;
-- stock-sentinel preregistration plus checksum sidecar, workload/config hashes, baseline-only service-curve calibration, frozen knee/capacity/TTFT-SLO/delta/interval/repeat budget, paired arm order, Store NIC/CPU samples, actual roomy/small segment responses, endpoint interval bounds, and the two explicit signal fields;
-- observation/decision, operation, batch/attempt, adapter-object, Get, output-hash, queue/ref/protection snapshot JSONL files;
-- workload input hash, request-to-worker assignment, warm-up/measurement/drain bounds, cleanup method, repeat/order, and a cryptographic checksum list;
-- a one-page outcome record with `gate_outcome` (`PASS`, `FAIL`, `INCONCLUSIVE`, or `STOP`), reason, and links to the first failing event.
+Common to every attempt:
 
-The manifest must explicitly contain both `claim_state` and `gate_outcome`; they are orthogonal. `claim_state` becomes `IMPLEMENTED_UNVALIDATED` only after the relevant patch exists and local tests pass. It remains `ROADMAP` for planning runs and becomes `EXPERIMENTALLY_VALIDATED` only for a retained, reproducible runtime artifact that satisfies the specific scenario—not for G3 performance. `gate_outcome=INCONCLUSIVE` never upgrades a complete G0 ruling.
+- `manifest.json`: run/stage identity, source/build/model/tokenizer/config hashes, realized hardware/environment/topology/endpoints and relevant patch identity;
+- exact commands plus raw stdout/stderr and an artifact inventory/checksum list;
+- `execution_status`; when blocked, the failed admission and raw evidence; when a Gate executed, its outcome/reason and links to the first failing event.
+
+Stage-specific subsets:
+
+- **C0:** C health/segment, A Put/exit, B cold/Get/load, raw responses, token accounting, deterministic output hashes, no-L3 control, A→C→B join and verified off-host-copy checksum;
+- **C1/S1–S3:** its own fresh C0 artifact, X* source/runtime construction, preregistration checksum, baseline-only calibration, frozen workload/coordinates/endpoint/interval/repeat rules, paired order and required pressure/fairness witnesses;
+- **trace/hook/G0 matrix:** only after its Gate unlocks it, observation/decision/operation/batch/adapter JSONL, output hashes and queue/ref/protection terminal snapshots required by that scenario.
+
+The manifest must contain `claim_state` and `execution_status`; include `gate_outcome` only when the Gate actually executed. They are orthogonal. `claim_state` becomes `IMPLEMENTED_UNVALIDATED` only after the relevant patch exists and local tests pass. It remains `ROADMAP` for planning runs and becomes `EXPERIMENTALLY_VALIDATED` only for a retained, reproducible runtime artifact that satisfies the specific scenario—not for G3 performance. `BLOCKED_BEFORE_C0` evaluates no predicate; `gate_outcome=INCONCLUSIVE` never upgrades a complete G0 ruling.
 
 ## Completion gate
 

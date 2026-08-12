@@ -1,5 +1,7 @@
 # 技术命题与 8–10 周可行性对抗评审
 
+> **历史评审归档（pre-D14 / NON-AUTHORITY）：**本文针对早期 SGLang/vLLM eviction、offload、FP8 的可行性判断。它不能授权恢复这些机制；当前唯一机制、Gate 与 STOP 以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14 和 [STATUS.md](../../../STATUS.md) 为准。
+
 > 评审日期：2026-08-04（Asia/Shanghai）  
 > 适用范围：用户已固定的项目内核；本评审不建议改项目方向，只审查命题是否成立、范围能否闭合、以及什么证据足以支持简历叙事。  
 > 证据纪律：框架行为以官方文档、当前源码、官方 RFC/PR 为主；论文只用于证明工作负载类别，不把多卡数据中心结果外推到单张 24GB 消费卡。

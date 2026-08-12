@@ -2,19 +2,29 @@
 
 Experiment runs are not committed by default. Store raw runs under experiments/runs and summarize validated evidence in a reviewed document.
 
-G0 stock sentinels have two different artifacts:
+The active G0 survival contract has two different artifacts:
 
 1. a treatment-blind preregistration copied from
-   [`manifests/g0-stock-sentinels-preregistration.example.json`](manifests/g0-stock-sentinels-preregistration.example.json),
-   completed from baseline-only calibration and checksummed before any treatment result is viewed; and
+   [`manifests/d14-survival-preregistration.example.json`](manifests/d14-survival-preregistration.example.json),
+   completed from source audit and baseline-only calibration and checksummed before any treatment result is viewed; it records the S1 hard veto, sticky-reuse S2/S3 witnesses, actual X* construction, and workload-split boundaries; and
 2. one run manifest per actual arm/repeat, linked back to that preregistration checksum.
+
+The preceding C0 functional preflight is governed separately by the
+[`G0 C0 Restore Qualification Contract`](../docs/implementation/G0_C0_RESTORE_QUALIFICATION_CONTRACT.md).
+The completed D14 schema is interpreted by the
+[`G0 D14 Survival Preregistration Contract`](../docs/implementation/G0_D14_SURVIVAL_PREREGISTRATION_CONTRACT.md).
+Before any formal cohort, the staged inputs, role artifact paths, archive finalizer and release boundary are governed by
+the [`G0 Pre-rental Execution and Evidence Contract`](../docs/implementation/G0_PRE_RENTAL_EXECUTION_CONTRACT.md).
+Neither document is a runtime artifact or a license to run a cohort.
 
 Do not combine these lifecycles. A run result cannot rewrite the frozen workload, knee, capacity coordinate, TTFT-SLO, materiality
 threshold, interval/stopping method pair or repeat budget. A necessary change creates a new preregistration version while retaining the old artifact and
-result. For D1 investment, a signal is a valid `false` only when every pressure/fairness prerequisite holds and the preregistered one-sided
+result. S1 is a hard veto. For S2/S3, a signal is a valid `false` only when every pressure/fairness prerequisite holds and the preregistered one-sided
 effect interval upper bound is below the engineering materiality threshold. A non-significant result or exhausted repeat budget with an
 interval that still crosses the threshold is `INCONCLUSIVE`, not a null. If the interval method is not valid under sequential looks, every
 frozen repeat must run and classification occurs once at the end.
+
+The older [`g0-stock-sentinels-preregistration.example.json`](manifests/g0-stock-sentinels-preregistration.example.json) is a retained **D12 historical schema**. It models one-shot write/capacity sentinels, is superseded by D14, and must not be copied for a new run.
 
 Every run manifest must record:
 
@@ -29,7 +39,7 @@ Every run manifest must record:
 - warm-up, measurement and drain windows;
 - TARGET_HELD_OUT or OOD_SHIFT classification;
 - repeat index and run order.
-- preregistration SHA-256 when the run belongs to a stock sentinel;
+- preregistration SHA-256 and S1/S2/S3 field when the run belongs to the active survival contract;
 - `gate_outcome`, reason code and explicit `true` / `false` / `INCONCLUSIVE` signal field when applicable.
 
 The example manifest is a schema example only. It is not a validated configuration.

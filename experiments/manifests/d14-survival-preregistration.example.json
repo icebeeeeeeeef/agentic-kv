@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "artifact_type": "d14_survival_preregistration",
+  "contract_state": "DRAFT",
+  "frozen_at_utc": null,
+  "frozen_before_treatment_results": true,
+  "checksum_sidecar": "preregistration.json.sha256",
+  "identity": {
+    "repo_commit": null,
+    "sglang_commit": "b058dc910619c9d4bce9e9e24117104ffc491fa6",
+    "mooncake_commit": "6041a609a8c3af35e778f70db344f145c2914980",
+    "mooncake_build_sha256": null,
+    "model_revision": null,
+    "tokenizer_revision": null,
+    "workload_hash": null,
+    "worker_assignment_hash": null
+  },
+  "common": {
+    "primary_endpoint": "goodput_at_ttft_slo",
+    "goodput_definition": "completed_requests_with_ttft_lte_slo_divided_by_measurement_window_seconds; fixed decode and request-error accounting required",
+    "ttft_slo_ms": null,
+    "analysis_unit": "independent_paired_run",
+    "interval_sidedness": "one_sided",
+    "interval_method": null,
+    "confidence_level": null,
+    "materiality_delta_relative": null,
+    "minimum_paired_repeats": 3,
+    "maximum_paired_repeats": null,
+    "sequential_stopping_rule": "after_minimum_repeats_continue_until_interval_is_entirely_above_or_below_delta_or_maximum_repeats_is_reached",
+    "interval_method_valid_for_stopping_rule": null,
+    "fallback_when_not_sequentially_valid": "run_maximum_repeats_and_classify_once",
+    "arm_order_method": null,
+    "arm_order_seed": null,
+    "warmup_window": null,
+    "measurement_window": null,
+    "drain_window": null,
+    "fresh_store_method": null
+  },
+  "workload_splits": {
+    "calibration": {"workload_hash": null, "future_demand_visible_to_policy": false},
+    "oracle_eval": {"workload_hash": null, "future_demand_visible_to_policy": "only_to_online_cheating_oracle"},
+    "target_held_out": {"workload_hash": null, "future_demand_visible_to_policy": false},
+    "ood_shift": {"workload_hash": null, "future_demand_visible_to_policy": false}
+  },
+  "baseline_calibration": {
+    "allowed_results": ["control_or_baseline_only"],
+    "offered_load_grid": [],
+    "knee_selection_rule": null,
+    "selected_knee_offered_load": null,
+    "selected_low_load_sanity_cell": null,
+    "baseline_noise_artifact": null,
+    "treatment_results_observed_before_freeze": false
+  },
+  "x_star": {
+    "definition": "stock_write_through_selective + sufficient_l2 + source_runtime_verified_usable_stock_quota_and_eviction_controls",
+    "audit_surface": {
+      "pinned_source_paths_or_functions": [],
+      "config_and_adapter_wiring": [],
+      "runtime_config_echo_and_effect_evidence": [],
+      "component_status_values": ["INCLUDED", "EXCLUDED_NOT_SOURCE_VERIFIED", "EXCLUDED_NOT_RUNTIME_EFFECTIVE", "EXCLUDED_UNFAIR"]
+    },
+    "selective_semantics_source_status": "SOURCE_TO_REVERIFY",
+    "sufficient_l2_configuration": null,
+    "sufficient_l2_rule": "active_set_within_frozen_budget_and_one_larger_available_l2_only_configuration_changes_endpoint_only_within_frozen_calibration_noise_band",
+    "quota_adapter_wiring": {"source_status": "SOURCE_TO_REVERIFY", "actual_configuration": null, "excluded_reason": null},
+    "eviction_controls": {"source_status": "SOURCE_TO_REVERIFY", "actual_configuration": null, "excluded_reason": null},
+    "runtime_effect_evidence": null,
+    "frontier_eliminates_opportunity_rule": "configured_x_star_proves_publication_mass_below_threshold_or_required_pressure_witness_absent_and_is_noninferior_to_preregistered_best_stock_reference; otherwise unresolved_is_inconclusive"
+  },
+  "s1_restore_value_region": {
+    "target_coordinates": [],
+    "l3_restore_arm": null,
+    "b_cold_no_l3_recompute_control": null,
+    "b_cold_request_rule": "each measurement request is B-local-cold; no repeated or prefix-overlapping B request within a measurement run",
+    "store_capacity_rule": "roomy_store_required_to_avoid_capacity_externality_confound",
+    "primary_effect_metric": "(goodput_l3_restore - goodput_b_cold_recompute) / goodput_b_cold_recompute",
+    "remote_get_materiality_floor": {
+      "metric": "sum_storage_cached_tokens_with_matching_remote_get_or_loaded_page_evidence_divided_by_sum_prompt_tokens_of_eligible_b_cold_requests",
+      "minimum_lower_bound": null
+    },
+    "restore_path_pass_required": true,
+    "remote_value_survives_required": true,
+    "net_value_relation": "restore_gt_recompute",
+    "true_rule": "at_least_one_covered_coordinate_has_effect_interval_lower_bound_above_delta_and_remote_restore_mass_lower_bound_above_floor",
+    "stop_rule": "all_covered_decisive_coordinates_have_effect_interval_upper_bound_lte_zero_or_target_remote_restore_mass_upper_bound_lte_floor",
+    "inconclusive_rule": "comparability_or_precision_is_insufficient"
+  },
+  "sticky_reuse_definition": {
+    "local_selective_condition": null,
+    "remote_reuse_horizon": null,
+    "low_remote_value_rule": null,
+    "publication_mass_metric": "source_derived_or_stock_observable_logical_publication_mass_lower_bound; never_new_physical_put_bytes_or_nic_bytes",
+    "minimum_material_publication_mass": null,
+    "one_shot_role": "x_star_negative_control_only"
+  },
+  "s2_publication_cost_envelope": {
+    "workload_contract": "sticky_reuse_publication_under_preregistered_pressure_witness",
+    "control_and_treatment_arms": {
+      "causal_control": "L2_ONLY_with_fixed_L2",
+      "causal_treatment": "STOCK_L3_with_fixed_L2",
+      "x_star": "separately_declared_external_substitute_not_part_of_fixed_L2_causal_attribution"
+    },
+    "effect_metric": "(goodput_l2_only - goodput_stock_l3) / goodput_l2_only",
+    "required_pressure_witnesses": [],
+    "required_fairness_witnesses": [],
+    "mediator_measurements": [],
+    "true_rule": "all_prerequisites_hold_and_one_sided_interval_lower_bound_exceeds_delta",
+    "false_rule": "all_prerequisites_hold_and_one_sided_interval_upper_bound_is_below_delta",
+    "inconclusive_rule": "a_prerequisite_is_unproven_or_interval_crosses_delta_at_maximum_repeats"
+  },
+  "s3_capacity_externality": {
+    "workload_contract": "bounded_l3_shared_prefix_plus_sticky_reuse_background",
+    "capacity_coordinates": {"small_segment_bytes": null, "roomy_segment_bytes": null, "frozen_formula": "reusable_set_lt_small_lt_reusable_set_plus_sticky_background_and_roomy_gt_full_distinct_set_plus_margin", "runtime_segment_response_required": true},
+    "control_and_treatment_arms": {"control": "STOCK_L3_roomy_fresh_C", "treatment": "STOCK_L3_small_fresh_C"},
+    "effect_metric": "(goodput_roomy - goodput_small) / goodput_roomy",
+    "required_pressure_witnesses": [],
+    "required_fairness_witnesses": [],
+    "required_mediator_directions_for_true": ["query_time_storage_availability_or_useful_get_changes", "uncached_or_prefill_tokens_change"],
+    "true_rule": "all_prerequisites_and_mediator_directions_hold_and_one_sided_interval_lower_bound_exceeds_delta",
+    "false_rule": "all_prerequisites_hold_and_one_sided_interval_upper_bound_is_below_delta",
+    "inconclusive_rule": "a_prerequisite_is_unproven_or_interval_crosses_delta_at_maximum_repeats"
+  },
+  "decision_rule": {
+    "continue_to_d1": "s1_survives_and_at_least_one_of_s2_or_s3_is_true",
+    "pre_implementation_stop": "s1_stop_or_both_s2_and_s3_are_valid_false_or_sticky_reuse_mass_is_below_threshold_or_remote_get_is_approximately_zero_or_frontier_eliminates_opportunity",
+    "cannot_decide": "any_required_gate_is_inconclusive",
+    "online_oracle_rule": "later_real_online_oracle_eval_vs_actual_x_star_is_stop_only_and_cannot_read_target_held_out_future_labels"
+  },
+  "supersession": {
+    "changes_require_new_version": true,
+    "fields_that_cannot_change_after_freeze": ["x_star_construction", "workload_splits", "workload", "offered_load", "capacity_coordinates", "ttft_slo", "materiality_delta", "interval_method", "repeat_budget", "arm_order"],
+    "prior_artifact_to_retain": null,
+    "change_reason": null
+  }
+}

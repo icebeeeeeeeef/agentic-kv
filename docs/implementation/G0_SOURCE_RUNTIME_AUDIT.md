@@ -92,8 +92,8 @@ the sum of `put_result=0` `buffer_sizes` `completed_new_put_bytes`. The project 
 accepted [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch): an independent,
 pre-collapse Mooncake trace-only observation boundary is defined, but not yet implemented or
 validated. Until its non-interference proof exists, the STOP remains. This does not invalidate
-restore or the L3 admission seam. D1 defines the observation boundary; [D12](../project/DECISIONS.md#d12--两个-stock-sentinel-有效-null-时在实现前-stop-payload-例外分两级授权)
-now separately gates whether the patch may be implemented after the stock pre-D1 ruling.
+restore or the Shared-L3 Publication Admission seam. D1 defines the observation boundary; [D12](../project/DECISIONS.md)
+now separately gates only a narrow payload exception. The active pre-D1 survival ruling is [D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击), whose S1–S3 contract must not be inferred from this source audit.
 
 The minimum **trace-only** propagation is:
 
@@ -127,6 +127,6 @@ the exported files, hashes, focused-test result, and fresh-worktree apply verifi
 
 The pinned SGLang README documents a source build, external master/metadata/store roles, `tcp` as a supported protocol, an external store's non-zero `global_segment_size`, and SGLang workers using `global_segment_size=0` when an external store exists. [README#L34-L78](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L34-L78), [README#L116-L183](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L116-L183), [README#L249-L253](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/README.md#L249-L253). The pinned registered test also configures `MOONCAKE_PROTOCOL=tcp`, blank device, metadata URL, and a global segment. [test_hicache_storage_mooncake_backend.py#L195-L211](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/test/registered/hicache/test_hicache_storage_mooncake_backend.py#L195-L211)
 
-This source evidence supports the external non-zero segment configuration shape, but it does not prove that two arbitrary roomy/small values take effect in the unresolved target build or that capacity can be changed in place. The pre-D1 capacity sentinel must therefore start a fresh Store for each value and retain that Store's runtime health/segment response; otherwise its capacity axis is `INCONCLUSIVE`.
+This source evidence supports the external non-zero segment configuration shape, but it does not prove that two arbitrary roomy/small values take effect in the unresolved target build or that capacity can be changed in place. D14 S3 `CAPACITY_EXTERNALITY` must therefore start a fresh Store for each value and retain that Store's runtime health/segment response; otherwise its capacity axis is `INCONCLUSIVE`.
 
 No runtime deployment, hook, trace field, candidate policy, payload reconciliation, or performance result exists in this repository. In particular, this audit must not be upgraded to `G0-RUNTIME VALIDATED`.

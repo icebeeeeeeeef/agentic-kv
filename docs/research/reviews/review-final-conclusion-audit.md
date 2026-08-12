@@ -1,5 +1,7 @@
 # 最终结论独立反方审计
 
+> **历史评审归档（pre-D14 / NON-AUTHORITY）：**本文审计的是早期 local retention/eviction、offload、FP8 项目 framing。它保留反方攻击与方法论证据，不定义当前执行；当前唯一机制、范围、Gate 与 STOP 以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14 和 [STATUS.md](../../../STATUS.md) 为准。
+
 审计对象：`outputs/agent-prefix-cache-project-selection-review-2026-08-04.md`
 
 审计日期：2026-08-04

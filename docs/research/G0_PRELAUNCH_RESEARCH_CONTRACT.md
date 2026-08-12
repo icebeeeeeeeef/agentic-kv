@@ -3,7 +3,7 @@
 > 状态：**ROADMAP（调查任务说明，不是调查结论）**
 > 当前 G0 裁决：**G0-SOURCE BLOCKED**
 > 面向对象：接手 G0 部署与验证前的独立 research agent
-> Canonical plan：[PROJECT_PLAN.md](../project/PROJECT_PLAN.md)；实际状态：[STATUS.md](../../STATUS.md)。如本文件与前二者冲突，以前二者为准。
+> Canonical plan：[PROJECT_PLAN.md](../project/PROJECT_PLAN.md)；实际状态：[STATUS.md](../../STATUS.md)。如本文件与前二者冲突，以前二者为准。当前 active pre-D1 contract 是 D14 的 S1–S3；D12 仅保留窄 payload/resource 例外，旧 one-shot sentinel 不得由本调查合同重新启用。
 
 ## 1. 目的和边界
 
@@ -254,14 +254,14 @@ observation_id → StorageOperation operation_id → batch_ordinal / attempt_id
 
 | 检查 | PASS | FAIL | INCONCLUSIVE / STOP |
 |---|---|---|---|
-| Prefix closure | 任一 group 首次 DROP 后无 admitted suffix；故意 hole 被决策边界拒绝；B lookup 在 first miss 停止。 | policy 产生不可达 admitted descendant，或通过新增 metadata/read path 修补。 | anchor/order 不可见：`STOP`，不做细粒度 policy。 |
+| Prefix closure | 一个 root/known-resident anchor 与 ordered hashes 构成的完整 group 只取得一个 action：完整 group `ADMIT`，或完整 group `DROP`；故意 partial-group hole / descendant-only group 被决策边界拒绝；B lookup 在 first miss 停止。 | policy 产生 partial-group admission，或通过新增 metadata/read path 修补。 | anchor/order 不可见：`STOP`，不做细粒度 policy。 |
 | Fail open | 人为抛出一次 policy exception，记录 `POLICY_ERROR_FAIL_OPEN` 后出现 upstream Put terminal 与正常 cleanup。 | 请求失败、意外 DROP、L2 受影响。 | exception terminal 无法观察：`INCONCLUSIVE`。 |
 | ALWAYS_DROP | L2 event/output 正确；无 `StorageOperation`、backup queue、`ongoing_backup`、host protection、Mooncake Put，且 `admitted_payload_bytes = submitted_payload_bytes = 0`。 | 任一 L3 mutation、ref/protection 变化或 L2 异常。 | 缺少任一状态证据：`INCONCLUSIVE`，不能由 aggregate metric 推零 Put。 |
 | Async drain | delay/success/dedup/failure/shutdown 后 backup queue、ack queue、`ongoing_backup` 和 protection 均回基线且无 hang。 | leak、residual ref 或 hang。 | 只有 process exit 可见：`STOP` runtime policy experiments。 |
 
 ### 必交付物
 
-- group/anchor 数据模型与三组手工 case：ancestor-admit/descendant-drop、ancestor-drop/forced-suffix-drop、split chain；
+- group/anchor 数据模型与三组手工 case：完整 group `ADMIT`、完整 group `DROP`、descendant-only / 无法重建的 split chain 被整体拒绝；
 - fail-open、ALWAYS_DROP、drain snapshots 的 raw traces；
 - 对每个无法注入 failure 的 case 标为 `INCONCLUSIVE`，不以理论替代。
 
@@ -273,9 +273,9 @@ observation_id → StorageOperation operation_id → batch_ordinal / attempt_id
 | R0 FAIL / STOP | 保持 `G0-SOURCE BLOCKED`，记录候选不兼容。 | 不换“最新版”继续宣称同一 pin。 |
 | R1 FAIL / STOP | 收口为部署不可用或环境不满足。 | 不改为 RDMA/GDR/NIXL、同进程伪双 worker 或 worker-local L3。 |
 | R2 或 R3 STOP | 保留 restore/correctness 调查；停止 payload-efficiency / byte claim。 | 不用 aggregate 指标或 simulator 补齐 physical payload。 |
-| R4 PASS | 先按 canonical G0 plan 运行 stock/no-patch `WRITE_COST_SENTINEL` 与 `CAPACITY_PRESSURE_SENTINEL`；至少一项有稳定端到端信号才自动做 R5 trace-only。双 null 后仅有符合 D12、在 D1 结果未知时冻结真实资源目标/预算/物质性判据的第一次 owner 例外可解锁 observation-only R5。 | 不把 stock restore 或粗粒度 sentinel 直接当作 policy 效果；两个 sentinel 都是有效 null 时在 owned patch 前 STOP，不满足 R/F，第一次例外也不授权 behavior hook。 |
-| R5 PASS | 实现最小 fail-open binary hook，并执行 R6。 | 不建设通用 policy framework。 |
-| R6 PASS | 运行 G0 matrix：ALWAYS_ADMIT、ALWAYS_DROP、closure、bytes、race/failure、cleanup。 | 不实现 VALUE_DENSITY 或启动 G2/G3。 |
+| R4 PASS | 只形成首次 C0 qualification；随后必须在 fresh C1 cohort 重做 C0，再 finite source/runtime-audit X*、完成 baseline-only freeze、S1 `RESTORE_VALUE_REGION` 与 sticky-reuse S2/S3。只有 S1 存活、target remote Get 非近零、sticky-reuse publication mass 达到冻结阈值且 S2/S3 至少一个 signal，才自动继续 D1 observation 与 R5 trace-only；双 valid-false 后仅有符合 D12、在 D1 结果未知时冻结真实资源目标/预算/物质性判据的第一次 owner 例外可解锁 observation-only R5。 | 不复用首次 C0 状态/artifact 证明 C1 eligibility；不把 stock restore、one-shot negative control 或粗粒度 Store activity 当作 policy 效果；S1 STOP、remote Get≈0、sticky-reuse mass 过小或 S2/S3 双 valid-false 均在 owned patch 前 STOP，不满足 R/F，第一次例外也不授权 behavior hook。 |
+| R5 PASS | 在 active D14-surviving branch 中实现最小 fail-open binary hook，并执行 R6；D12 第一次例外本身不授权此步骤。 | 不建设通用 policy framework、Agent hint 或 VALUE_DENSITY candidate。 |
+| R6 PASS | 运行 G0 matrix：ALWAYS_ADMIT、ALWAYS_DROP、closure、bytes、race/failure、cleanup；之后才可进入 G2a/O1 的独立 Gate。 | 不自动实现 candidate、conditional ledger 或 G3。 |
 
 ## 11. 研究报告验收清单
 

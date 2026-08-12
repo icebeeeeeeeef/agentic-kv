@@ -1,5 +1,7 @@
 # KV Cache 求职项目方向复核
 
+> **历史 source material（NON-AUTHORITY）：**这是 2026-07-28 的用户提供方向材料，包含已被 D14 排除或收窄的 admission/offload/failure framing。它只保留 provenance；当前工程范围和 claim 以 [PROJECT_PLAN.md](../../project/PROJECT_PLAN.md)、D14 和 [STATUS.md](../../../STATUS.md) 为准。
+
 日期：2026-07-28
 目标：单人、单卡、偏 runtime engineering，面向 LLM Serving / KV Cache 相关团队。
 
