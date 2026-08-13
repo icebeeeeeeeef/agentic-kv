@@ -487,7 +487,9 @@ runtime evidence，不产生租机授权，也不改变 SOP、PROJECT_PLAN 的 G
 4. C0 使用相同 raw prompt/token identity；shared prefix 只需满足实际 page alignment，并达到已核验的 stock
    write/prefetch 条件，产生非零 Put/Get。decode 使用确定性 greedy，至少比较一个 completion token，并保存 token
    IDs（若 API 可得）或固定 UTF-8 output hash；不把固定 `N >= 8192` 或恰好 32 个 completion tokens 当作 oracle。
-5. 最小 cold/join 证据是：fresh C 与唯一 keyspace、A 是唯一 writer、A 的 Put terminal、A 结束后创建的 fresh B、
+5. 最小 cold/join 证据是：fresh C 与唯一 keyspace、A 是 tested `config_prefix`/model KV objects 的唯一 writer；
+   唯一允许例外是 pinned stock client startup `sglang_mooncake_store_warmup_key` + UUID，须用 source 和 A/B-L3
+   success/config-prefix 日志证明它不经过 `_tag_keys` 且与 tested key 分离，不得允许 B 写 tested key。另需 A 的 Put terminal、A 结束后创建的 fresh B、
    B 的空 request ledger 与独立 writable state、B 禁用本地 persistent cache、B 对相同 token hash 的 remote
    Get/load，以及 fresh B-no-L3 control。stock 若直接暴露 L1/L2 empty 或 C-side request/key identity 则保存，但它们
    不是首次 C0 的循环前提，也不为此提前实现 trace patch。

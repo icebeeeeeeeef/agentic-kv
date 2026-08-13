@@ -50,9 +50,9 @@ write condition、GPU、Store 和 private TCP 事实只能在租机后检查。�
 每个 C0 run 使用唯一 `run_id`、fresh C 实例或可证明空 keyspace 的等价隔离。`extra_backend_tag` 只能是辅助标签；它本身不证明 Store 容量或对象状态已隔离。
 
 1. **target admission probe**：核验输入 hash；记录 SGLang SHA、Mooncake tag/full SHA/wheel-or-build hash、model/tokenizer hashes、实际 GPU UUID、API request/response fields、cache implementation、page size、stock write policy/threshold、C health/nonzero bounded segment 和 private endpoint。任何失败都停在 `BLOCKED_BEFORE_C0`。
-2. **fresh C / unique keyspace**：创建 fresh C 或证明等价的空隔离 keyspace；本 run 的 A 是唯一 writer。只启动 metadata/master 或使用 zero-sized segment 不合格。
+2. **fresh C / unique keyspace**：创建 fresh C 或证明等价的空隔离 keyspace；A 是 tested `config_prefix`/model KV objects 的唯一 writer。唯一允许的例外是 pinned stock client 启动时使用 `sglang_mooncake_store_warmup_key` + UUID 的 warmup object：它不经过 `_tag_keys`，而测试 page key 必须经过 `config_prefix`；A/B-L3 均须保留 warmup 成功与 config-prefix 日志。除此之外不得允许 B 写 tested key。只启动 metadata/master 或使用 zero-sized segment 不合格。
 3. **A Put**：A 按 probe 后冻结的最小请求序列触发已核验的 stock write condition，最后写入与 B 请求相同的 page-aligned prefix，并等待 terminal Put。没有 Put terminal 时停在 `BLOCKED_BEFORE_C0`，不得把未形成的 A→C premise 判成 C0 `FAIL`。
-4. **A→C→B join**：fresh C/unique keyspace、A sole-writer、A Put terminal、相同 token hash 和随后 B 的 remote Get/load 共同闭合最小 join。若 stock C 直接暴露 request/key identity 则保存；不能只凭 aggregate NIC/Store 流量归因，也不为 C0 提前实现 trace patch。
+4. **A→C→B join**：fresh C/unique keyspace、A 对 tested config-prefix/model KV objects 的 sole-writer、已留证且 namespace 分离的 stock warmup 例外、A Put terminal、相同 token hash 和随后 B 的 remote Get/load 共同闭合最小 join。若 stock C 直接暴露 request/key identity 则保存；不能只凭 aggregate NIC/Store 流量归因，也不为 C0 提前实现 trace patch。
 5. **B cold certificate**：保存 A terminal 后退出/销毁的证据，再创建 fresh B-L3 process；B 在请求前完成第 4 节 cold certificate。A/B 可以顺序使用同一物理 GPU，但不得重叠运行或共享可写/persistent local state。
 6. **B L3 request**：B 对同一 raw prompt 发请求；保留 Get/loaded-page、token source accounting、输出和配置。
 7. **fresh B-cold no-L3 control**：销毁 B-L3，启动新的 B process，L3 明确 disabled，再发完全相同请求；保留同类 token/output/config artifact。
@@ -66,6 +66,7 @@ C1 必须在自己的 fresh cohort 重做这个 preflight；C0 的 retained arti
 
 - B PID、start time、binary/config hash、`CUDA_VISIBLE_DEVICES` 与实际 GPU UUID；
 - B 在目标请求前没有任何 request ledger entry；
+- `--skip-server-warmup` 禁止 model/API warmup request；Mooncake client 的固定 namespace warmup 不是请求 ledger entry，必须按第 3 节单独留证；
 - A Put terminal 后 A 已退出，B 是此后创建的新 PID，且没有继承 A/B-L3 的 writable state；
 - B 的 `global_segment_size=0`、无可复用 persistent local cache path，且连接的是 manifest 记录的 C；
 - 若 stock 暴露直接的 L1/L2 empty/resident/match metric/log，则一并保存，但它不是首次 C0 的唯一入口。
@@ -79,7 +80,8 @@ PID/start、空 request ledger、独立 writable state、无 persistent local ca
 | 观察 | 最小内容 | 支持的 predicate |
 |---|---|---|
 | admission / trigger | input/build/API/config identity、page size、write policy/threshold、A fixed sequence、GPU/C/private endpoint | 是否进入 C0；不支持 predicate 本身 |
-| C pre/post state | config、health/nonzero segment、fresh C or unique keyspace、启动日志 | A→C attribution、freshness |
+| C pre/post state | config、`/get_all_segments` raw/已确认 schema 与 exact nonzero segment、fresh C or unique keyspace、启动日志 | A→C attribution、freshness |
+| stock warmup exception | pinned adapter hash/source proof、A/B-L3 warmup success、相同 tested config prefix | 排除唯一允许的非测试 writer object |
 | A Put | request/token identity、terminal result、stock write completion、A config、A exit | `RESTORE_PATH_PASS` |
 | B cold certificate | 第 4 节全部项目 | `RESTORE_PATH_PASS` |
 | B Get/load | remote Get 与 loaded logical storage pages 的 stock evidence，能关联 B request | `RESTORE_PATH_PASS` |
@@ -122,7 +124,7 @@ PID/start、空 request ledger、独立 writable state、无 persistent local ca
 
 - **本地 cache 泄漏**：以 fresh PID/start、空 request ledger、独立 writable state、无 persistent cache 和 worker zero-segment 的合取证明；stock direct local metric 若存在则增强证据。
 - **错误 prefix 等价**：同时核验 raw prompt hash、token-ID hash、page alignment 与 request config。
-- **无关 Store object / C 遗留状态**：以 fresh C/unique keyspace、A sole-writer、A Put terminal、相同 token hash 与 B Get/load 的 join 排除。
+- **无关 Store object / C 遗留状态**：以 fresh C/unique keyspace、A 对 tested config-prefix/model KV objects 的 sole-writer、唯一 stock warmup-key 例外的 source/日志隔离证据、A Put terminal、相同 token hash 与 B Get/load 的 join 排除。
 - **模型或 tokenizer 漂移**：A/B file hash、served model name 与 tokenizer identity 必须相同。
 - **A/B 生命周期混用**：以 A exit、B fresh PID、无进程重叠和独立 writable state 证明；同一物理 GPU 的顺序复用不冒充 cross-GPU 证据。
 - **TTFT-only 假阳性**：TTFT 不进入 predicate；token source accounting 与 B-cold no-L3 control 才有裁决权。

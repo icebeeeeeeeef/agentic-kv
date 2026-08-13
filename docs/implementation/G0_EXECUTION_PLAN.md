@@ -14,6 +14,8 @@ partial deployment.
 
 **Pre-rental boundary:** the first C0 follows [D18's minimal execution contract](G0_PRE_RENTAL_EXECUTION_CONTRACT.md): materialize content-addressed inputs plus a one-shot runbook/raw-capture/off-host handoff, then verify target-host build/API/config/write-trigger/GPU/Store/private-TCP facts only after rental and run Task 1 immediately. OCI/OSS are optional delivery mechanisms. Formal finalization, automatic classification and lifecycle controls are later hardening, not first-C0 prerequisites. This cannot weaken either Task 1 predicate.
 
+**Evidence-driven deployment carry-forward:** first-C0 r1–r5 exposed a bounded set of real bootstrap/runtime blockers. The exact symptoms, minimal fixes and passing r6 environment are retained in the [first-C0 deployment retrospective](G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md). A future C1 runbook may reuse that dependency recipe and stock direct-I/O setting, but must have a new reviewed hash and fresh cohort; the historical r6 runbook and runtime state remain immutable evidence.
+
 ---
 
 ## Preconditions and hard admission checks
@@ -26,7 +28,7 @@ partial deployment.
 | GPU layout | one compatible CUDA GPU; A and B are distinct, non-overlapping lifecycles with independent writable state; TP=PP=DP=DCP=1 | `BLOCKED_BEFORE_C0`; do not use TP/PP/DP/DCP as a substitute for two worker lifecycles. |
 | Model | dense, non-hybrid model and tokenizer revision are immutable in the manifest; the same model/tokenizer hashes are visible on A and B | `BLOCKED_BEFORE_C0`; no floating model revision or differing tokenizer. |
 | Cache | HiRadixCache is asserted from startup output; Unified Radix Tree disabled; one fixed page size and L1/L2 capacities | `BLOCKED_BEFORE_C0` for C0; do not accept fallback cache or per-arm L1/L2 changes. |
-| L3 | C is the only non-zero `global_segment_size`; A/B each use `0`; C's bounded segment is observable via the Mooncake health/segment endpoint | `BLOCKED_BEFORE_C0`; workers must not contribute memory and C must not be zero-segment. |
+| L3 | C is the only non-zero `global_segment_size`; A/B each use `0`; exact C config/hash, post-`setup` success, live PID/TCP and stock master `/get_all_segments` raw response with target-confirmed schema jointly prove C admission | `BLOCKED_BEFORE_C0`; workers must not contribute memory and C must not be zero-segment. |
 | Transport | `MOONCAKE_PROTOCOL=tcp`, blank device, no RDMA/GDR/NIXL flags | `BLOCKED_BEFORE_C0`; do not broaden G0 to another data path. |
 | New-Put payload attribution | [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) defines the only allowed pre-collapse Mooncake trace-only observation; its implementation is gated by the active S1–S3 ruling in [D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击) or D12's narrow payload exception. | Do not implement it after D14's valid opportunity STOP without D12's first-stage resource-objective record; never run `BYTE_RECONCILE` or make payload-efficiency claims until the patch and its trace-disabled/trace-enabled non-interference oracle pass. |
 
@@ -60,7 +62,9 @@ python3.11 -c 'import mooncake; import importlib.metadata as m; print(m.version(
 
 The `sha256sum` output must equal the precondition value. The official SGLang adapter only documents the generic source build (`bash dependencies.sh && cmake .. && make -j`); it does not pin source-build switches for this SGLang commit. A source-build fallback is therefore a separate source-compatibility investigation, not an interchangeable G0 input.
 
-On C, use a dedicated JSON config with `protocol: "tcp"`, `device_name: ""`, a non-zero integer `global_segment_size`, `local_buffer_size: 0`, and the addresses above. Start metadata, master, and the external store. Query the configured master segment endpoint and save the response before starting either worker. A and B use identical `--hicache-storage-backend-extra-config` except unique `local_hostname`; both set `global_segment_size: 0`, `protocol: "tcp"`, the same `tenant_id`/`extra_backend_tag`, and the same model name.
+On C, use a dedicated JSON config with `protocol: "tcp"`, `device_name: ""`, a non-zero integer `global_segment_size`, `local_buffer_size: 0`, and the addresses above. Start metadata, master, and the external store. Pinned SGLang uses the stock master `/get_all_segments` endpoint on metrics port 9003; retain the live raw response, then require owner-confirmed response fields to match C's private endpoint and exact configured nonzero segment before either request. When first C0 reuses one physical worker host, A and B use the same reviewed worker private endpoint in `local_hostname`; fresh PID/state/run identity proves lifecycle separation. Their Store/keyspace fields remain identical, including `global_segment_size: 0`, `protocol: "tcp"`, `tenant_id`/`extra_backend_tag`, model name, `master_metrics_port`, `check_server: true`, and prefetch threshold 256.
+
+Pinned stock `MooncakeStore` writes one startup-only object whose key is `sglang_mooncake_store_warmup_key` + UUID. It is the sole exception to A's tested-key writer invariant because it bypasses `_tag_keys`, while model page keys are tagged by the shared `config_prefix`. Retain the pinned adapter hash/source proof and A/B-L3 warmup/config-prefix success logs; B must never write a tested config-prefix/model key.
 
 The candidate is not compatible until this API smoke probe passes under the pinned checkouts:
 
@@ -105,14 +109,25 @@ implements this Task 1 oracle and cannot relax it.
 For the first target run, use only the one-shot C-host and worker commands from D18. Manual fail-fast execution is enough;
 do not require an independent collector/classifier, C1 runner, general orchestrator or formal abort/finalizer machinery.
 
-- [ ] Complete the target admission probe: verify content hashes, build/API/config, actual page size, stock write policy/threshold, one GPU, C health/nonzero segment, worker zero-segment and private TCP. If any item fails, record `BLOCKED_BEFORE_C0` and do not evaluate either predicate.
-- [ ] Start fresh C/unique keyspace and save configuration, process logs, health response, source/build identities; A is the sole writer for this run.
-- [ ] Start stock pinned A with the frozen model/tokenizer/cache configuration and `global_segment_size=0`; run the minimal fixed request sequence that reaches the verified write condition and save terminal Put.
-- [ ] Save A exit, then start fresh B-L3 with identical static configuration, empty request ledger, independent writable state, no persistent local cache and `global_segment_size=0`. A/B may sequentially use the same GPU.
-- [ ] Issue the identical page-aligned raw prompt/token sequence to B and close the A→C→B join using fresh C/keyspace, A sole-writer/Put terminal and B Get/load evidence.
-- [ ] For the L3 arm, request the pinned runtime's cache-source breakdown and preserve B's `cached_tokens_details.storage`, total `cached_tokens`, `prompt_tokens`, and derived `uncached_prompt_tokens = prompt_tokens - cached_tokens` together with Mooncake adapter/Get evidence.
-- [ ] Run the identical deterministic-greedy request on a separately fresh B-cold no-L3 control. Preserve the same token-accounting fields, at least one completion token and output hash. This is a token-level mechanism control, not a TTFT/Goodput performance claim.
-- [ ] Before release, inventory/checksum the raw C0 bundle, copy it off-host and verify the copied checksum.
+- [x] Complete the target admission probe: verify content hashes, build/API/config, actual page size, stock write policy/threshold, one GPU, C health/nonzero segment, worker zero-segment and private TCP. If any item fails, record `BLOCKED_BEFORE_C0` and do not evaluate either predicate.
+- [x] Start fresh C/unique keyspace and save configuration, process logs, segment response and source/build identities; A is sole writer of tested config-prefix/model KV objects, with only the source-proved stock warmup-key exception retained and excluded.
+- [x] Start stock pinned A with the frozen model/tokenizer/cache configuration and `global_segment_size=0`; run the minimal fixed request sequence that reaches the verified write condition and save terminal Put.
+- [x] Save A exit, then start fresh B-L3 with the same runbook-bound realized configuration, empty request ledger, independent writable state, no persistent local cache and `global_segment_size=0`. A/B may sequentially use the same GPU.
+- [x] Issue the identical page-aligned raw prompt/token sequence to B and close the A→C→B join using fresh C/keyspace, A sole-writer of tested config-prefix/model KV objects, the isolated stock warmup-key exception, A Put terminal and B Get/load evidence.
+- [x] For the L3 arm, request the pinned runtime's cache-source breakdown and preserve B's `cached_tokens_details.storage`, total `cached_tokens`, `prompt_tokens`, and derived `uncached_prompt_tokens = prompt_tokens - cached_tokens` together with Mooncake adapter/Get evidence.
+- [x] Run the identical deterministic-greedy request on a separately fresh B-cold no-L3 control. Preserve the same token-accounting fields, at least one completion token and output hash. This is a token-level mechanism control, not a TTFT/Goodput performance claim.
+- [x] Before release, inventory/checksum the raw C0 bundle, copy it off-host and verify the copied checksum.
+
+**First target C0 outcome (2026-08-13):** owner-confirmed r6 is `execution_status=EXECUTED`,
+`gate_outcome=PASS`, `RESTORE_PATH_PASS=PASS`, `REMOTE_VALUE_SURVIVES=PASS`,
+`next_action=REVIEW_C1`. A published 512 prompt tokens; fresh B-L3 reported 448 storage-cached
+and 64 uncached tokens, while fresh B-no-L3 reported 0 cached and 512 uncached tokens. Prompt IDs,
+completion IDs and output hashes matched. The sealed raw archive is
+`oss://agentic-kv-c0-evidence-20260812/c0/runs/first-c0-20260813-r6/c0-raw-evidence.tar`,
+SHA-256 `a155afe674d7a0fa76ad4e14a3b02a5cbeabf3ba22b437fd67ce79310b43f35c`,
+with an independently matching OSS readback. Retained r4/r5 attempts are `BLOCKED_BEFORE_C0`,
+not failed C0s; only r6 used the stock `--hicache-io-backend direct` path and reached the oracle.
+This qualifies the restore mechanism only and cannot replace fresh-C1 C0 or D14 S1.
 
 Record two outcomes rather than collapsing them into one:
 

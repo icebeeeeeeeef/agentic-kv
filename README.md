@@ -9,10 +9,11 @@
 ## 当前状态
 
 - 裁决：Conditional Select
-- 阶段：仓库初始化完成，G0 尚未开始
-- 已实现代码：仅仓库 smoke skeleton
-- Mooncake source：`v0.3.12.post1` candidate（commit `6041a609a8c3af35e778f70db344f145c2914980`）已 SOURCE_VERIFIED；目标 Linux build/API 与 pinned SGLang adapter 的 runtime compatibility 仍未验证
-- 未验证：跨 worker shared-L3 restore、该 restore 是否实际减少 prefill、D1 trace-only observation、SGLang trace correlation、L3 admission hook、候选策略及任何性能收益
+- 阶段：首次 C0 restore qualification 已通过并封存；fresh C1 尚未开始
+- 已实现代码：仓库 smoke skeleton，以及首次 C0 的内容寻址输入和一次性执行/证据工件；尚无 runtime hook
+- Mooncake source：`v0.3.12.post1` candidate（commit `6041a609a8c3af35e778f70db344f145c2914980`）已 SOURCE_VERIFIED；固定 r6 TCP/direct-I/O/L20 拓扑已 EXPERIMENTALLY_VALIDATED，不构成通用 compatibility claim
+- 已验证：first-C0 stock A → external C → fresh B 的 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`；部署 blocker 复盘见 [`G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md`](docs/implementation/G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md)
+- 未验证：fresh-C1 C0、S1–S3、D1 trace-only observation、SGLang trace correlation、L3 admission hook、候选策略及任何性能收益
 
 不要把 ROADMAP、SOURCE_VERIFIED、IMPLEMENTED_UNVALIDATED 与 EXPERIMENTALLY_VALIDATED 混为一谈。
 

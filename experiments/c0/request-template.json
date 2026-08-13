@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "template_id": "first-c0-raw-prompt-v2",
+  "endpoint": "/v1/completions",
+  "seed_text": "AGENTIC-KV-FIRST-C0|owner-reviewed-seed-20260812|",
+  "filler_text": "fixed-shared-prefix-filler-0123456789abcdef|",
+  "suffix_text": "|FIRST-C0-END",
+  "construction": {
+    "candidate": "seed_text + (filler_text * filler_repetitions) + suffix_text",
+    "search_order": "ascending_nonnegative_filler_repetitions",
+    "selection": "first token_count >= minimum_prefix_tokens and token_count % page_size == 0",
+    "tokenization": {
+      "add_special_tokens": false
+    },
+    "on_no_candidate": "BLOCKED_BEFORE_C0"
+  },
+  "serialization": {
+    "format": "utf8-json",
+    "sort_keys": true,
+    "separators": [
+      ",",
+      ":"
+    ],
+    "ensure_ascii": false,
+    "trailing_newline": false
+  },
+  "decode": {
+    "max_tokens": 1,
+    "min_tokens": 1,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": -1,
+    "min_p": 0.0,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "n": 1,
+    "seed": 20260812,
+    "stream": false,
+    "echo": false,
+    "ignore_eos": true,
+    "return_cached_tokens_details": true,
+    "return_token_ids": true
+  }
+}
