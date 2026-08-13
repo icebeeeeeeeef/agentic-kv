@@ -9,6 +9,7 @@
 | Current state | ../STATUS.md | What has actually been implemented or validated |
 | Short-term tasks | ../TASKS.md | Only work explicitly added by the user; not a roadmap |
 | Implementation contracts/evidence | implementation/ | Pinned-source facts, execution contracts and retained runtime artifacts; low-level contracts cannot rewrite higher Gate/STOP or current state |
+| First-C0 deployment retrospective | implementation/G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md | Runtime-observed Python/dependency/process/OSS blockers and the smallest known-working carry-forward for a fresh deployment |
 | Durable decisions | project/DECISIONS.md | Owner-confirmed constraints on implementation/claim; `DECIDED` is not runtime evidence or a substitute for Gate/STOP |
 | Patch provenance | ../patches/README.md | Reviewable ordered upstream patch series; `PLANNED` entries are not patches or runtime evidence |
 | Interview defense | project/INTERVIEW_QA.md | Evidence-derived Q&A; cannot upgrade claim state |

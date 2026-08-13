@@ -37,7 +37,7 @@ C 与 worker 使用同一私有 VPC 的记录 endpoint；Store data port 不得�
 
 ### 3.1 租机前必须物化
 
-1. 内容寻址 input bundle：exact SGLang source、Mooncake wheel/source/build input、model、tokenizer、request template、static config 与 checksums。
+1. 内容寻址 input bundle：exact SGLang source、Mooncake wheel/source/build input、model、tokenizer、request template 与 checksums；target 待执行的 TCP/cold-isolation/topology command template 由独立 owner-reviewed runbook SHA 绑定，运行前必须核对并留证。
 2. 单次 runbook：target admission probe、C start、A fixed trigger、A exit、fresh B-L3、fresh B-no-L3、raw capture、bundle/checksum 与 off-host copy。
 
 OCI archive 或 OSS 可以是选定的传输实现，但不是 C0 correctness Gate；不要求 mutable registry、完整 OSS object re-list/readback、独立 collector/classifier、remote orchestrator、scheduler 或 C1 runner。目标 host 在使用前核对 input bundle checksum 即可防止输入漂移。
@@ -74,7 +74,7 @@ C0 只需一个 nonzero bounded C segment。S3 的 `small`/`roomy` 容量必须�
 
 执行顺序与判定完全服从 [C0 Restore Qualification Contract](G0_C0_RESTORE_QUALIFICATION_CONTRACT.md)：
 
-1. fresh C / unique keyspace，A sole writer；
+1. fresh C / unique keyspace，A 是 tested config-prefix/model KV objects 的 sole writer；唯一例外是 source-proved、单独留证且不经过 `_tag_keys` 的 stock startup warmup key；
 2. A 以实际 threshold 对应的最小固定请求序列取得 terminal Put；
 3. A 退出，fresh B-L3 对 identical raw prompt/token hash 执行 Get/load；
 4. fresh B-no-L3 执行 identical request；
@@ -122,7 +122,7 @@ RDMA 当前被 canonical scope 排除，不能用于挽救 TCP 的 `FAIL`、`STO
 
 | 项目 | 状态 | 合法处理 |
 |---|---|---|
-| input bundle + one-shot runbook/handoff | 未物化；当前唯一 pre-rental blocker | 物化后由 owner review，不能用决议文本代替 |
+| input bundle + one-shot runbook/handoff | fail-closed r7 已本地物化并完成 owner review；bundle owner root=`207f866e2bbc83f96207d112a8d10730280fddd91422b59f02e7b858d9b7c477`，独立 runbook owner root=`577588c07b7cb7d5a593f5dd2b0d69a8d733a6c6cc898767374dc7a3b241b4ec`；租机后 C-host probe 已暴露并收窄真实 runtime blockers，尚未完成正式 admission | 继续按最新 root 重跑 C-host/worker admission；不把本地 checksum/test 或 C-host probe 写成 C0 evidence |
 | region/AZ、价格、库存、quota、instance/image ID | 租机日 `UNRESOLVED` | 当日选择并记 manifest；same-AZ 不作为 C0 correctness Gate |
 | host driver/runtime、build/API、page size、write threshold、GPU UUID | target runtime `UNRESOLVED` | 首个 request 前 probe；失败=`BLOCKED_BEFORE_C0` |
 | C segment/private endpoint/Store-port exposure | target runtime `UNRESOLVED` | 首个 request 前 probe；失败=`BLOCKED_BEFORE_C0` |
