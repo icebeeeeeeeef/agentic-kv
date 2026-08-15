@@ -1,6 +1,8 @@
 # R4 — SGLang runtime 配置、冷态与 cross-worker attribution
 
-**结论：INCONCLUSIVE。** source 提供了 first-miss query、storage-loaded-token 的记账与响应暴露路径；
+> Historical prelaunch finding. It records no runtime artifact of its own. The later first-C0 r6 artifact scoped-validates A Put→cold B Get and token survival; current state is [STATUS.md](../../../../STATUS.md).
+
+**历史结论：INCONCLUSIVE。** source 提供了 first-miss query、storage-loaded-token 的记账与响应暴露路径；
 没有 A Put → cold B Get 的真实链和 B-cold no-L3 token control，不能声称 shared-L3 restore 或 prefill
 survival。
 

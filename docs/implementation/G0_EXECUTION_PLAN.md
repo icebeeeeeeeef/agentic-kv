@@ -6,13 +6,13 @@
 
 **Tech Stack:** SGLang `b058dc910619c9d4bce9e9e24117104ffc491fa6`; Mooncake release candidate `v0.3.12.post1` (`6041a60` release commit prefix); Python; CUDA GPU workers; Mooncake TCP Store; JSONL artifacts.
 
-**Current executor note (2026-08-08):** the local macOS/arm64 preflight stopped before any
+**Historical local-executor note (2026-08-08):** the local macOS/arm64 preflight stopped before any
 upstream process started; see [T5 local preflight STOP](G0_T5_LOCAL_PREFLIGHT_STOP.md). This
 does not decide target-Linux compatibility, but it blocks T6/T7 on that executor. A future
 Linux CUDA run must re-execute every precondition below rather than treating this record as a
 partial deployment.
 
-**Pre-rental boundary:** the first C0 follows [D18's minimal execution contract](G0_PRE_RENTAL_EXECUTION_CONTRACT.md): materialize content-addressed inputs plus a one-shot runbook/raw-capture/off-host handoff, then verify target-host build/API/config/write-trigger/GPU/Store/private-TCP facts only after rental and run Task 1 immediately. OCI/OSS are optional delivery mechanisms. Formal finalization, automatic classification and lifecycle controls are later hardening, not first-C0 prerequisites. This cannot weaken either Task 1 predicate.
+**First-C0 historical execution boundary:** the completed first C0 was governed by [D18's minimal execution contract](G0_PRE_RENTAL_EXECUTION_CONTRACT.md): materialize content-addressed inputs plus a one-shot runbook/raw-capture/off-host handoff, then verify target-host build/API/config/write-trigger/GPU/Store/private-TCP facts after rental and run Task 1. OCI/OSS are optional delivery mechanisms. Formal finalization, automatic classification and lifecycle controls were not first-C0 prerequisites. This cannot weaken either Task 1 predicate; fresh C1 requires its own reviewed runbook and admission.
 
 **Evidence-driven deployment carry-forward:** first-C0 r1–r5 exposed a bounded set of real bootstrap/runtime blockers. The exact symptoms, minimal fixes and passing r6 environment are retained in the [first-C0 deployment retrospective](G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md). A future C1 runbook may reuse that dependency recipe and stock direct-I/O setting, but must have a new reviewed hash and fresh cohort; the historical r6 runbook and runtime state remain immutable evidence.
 

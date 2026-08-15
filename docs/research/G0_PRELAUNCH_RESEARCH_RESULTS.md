@@ -1,18 +1,19 @@
 # G0 启动前调查结果
 
 > 调查完成日期：2026-08-06
-> 总裁决：**G0-SOURCE BLOCKED**
+> Historical prelaunch verdict: **G0-SOURCE BLOCKED**
 > 范围：`G0_PRELAUNCH_RESEARCH_CONTRACT.md` 的 R0–R6。本文是源码/发布物调查，不是 runtime 验证。
 > **D1/D14 后续状态（2026-08-10）：**下述 R2/R3 的 `STOP` 只针对 adapter-visible terminal contract；
 > [D1](../project/DECISIONS.md#d1--保留-new-put-payload-指标并授权最小观察-patch) 已固定独立的
 > pre-collapse observation 边界；[D14](../project/DECISIONS.md#d14--shared-l3-publication-admission-收敛与替代攻击)
 > 是 active pre-D1 survival ruling，D12 仅保留其窄 payload/resource 例外。该 patch 尚未实现或验证，故 payload claim 仍为 STOP。
+> **Runtime follow-up (2026-08-13):** first-C0 r6 later passed the scoped stock restore qualification. The R0–R6 results below retain their prelaunch source/terminal boundaries; they do not describe the current project state, which is [STATUS.md](../../STATUS.md).
 
 ## 结论
 
 Mooncake 候选现在可以精确固定为 `v0.3.12.post1` / commit
 `6041a609a8c3af35e778f70db344f145c2914980`；官方 Linux x86_64 CPython 3.11
-wheel 的 SHA-256 也已确认。但当前工作区没有 Linux GPU、Mooncake 服务、已安装 wheel 或
+wheel 的 SHA-256 也已确认。在该 prelaunch workspace/调查包中没有 Linux GPU、Mooncake 服务、已安装 wheel 或
 SGLang adapter Put/Get artifact。因此版本身份的源码调查通过，不等于组合兼容。
 
 | 包 | 总结论 | 已通过的调查事实 | 阻塞它成为 PASS 的证据 |
@@ -25,11 +26,11 @@ SGLang adapter Put/Get artifact。因此版本身份的源码调查通过，不�
 | R5 | INCONCLUSIVE | `StorageOperation.id`、batch 切分、adapter object 边界提供最小传播点 | 未实现 trace patch，未做 disabled/enabled 等价运行 |
 | R6 | INCONCLUSIVE | L2 ack 后 seam、first-miss、ack/shutdown cleanup 是源码事实 | hook、hole、fail-open、DROP 与 drain artifact 均不存在 |
 
-没有包达到运行时 `PASS`。R2 的 state-classification 检查是一个**源码已证实的 FAIL**，
+这份 prelaunch 调查包中没有包达到运行时 `PASS`。R2 的 state-classification 检查是一个**源码已证实的 FAIL**，
 因此该包的 payload/dedup/race 归因分支为 `STOP`：`precheck-miss + put=0` 不能区分新写和
 另一 writer 已写；R3 因此对 new-payload bytes 为 `STOP`。此外 R0 仍缺
-真实组合 probe。当前整体仍是 `G0-SOURCE BLOCKED`，不得实施 behavior hook 或声称
-Mooncake 已兼容。
+真实组合 probe。**在调查结论时**整体是 `G0-SOURCE BLOCKED`，不得实施 behavior hook 或声称
+Mooncake 已兼容；后续 r6 的 scoped stock compatibility/restore result 不授权 hook，也不消除本段的 payload attribution STOP。
 
 ## 已固定的一手身份
 

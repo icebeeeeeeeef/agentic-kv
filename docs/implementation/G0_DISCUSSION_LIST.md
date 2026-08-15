@@ -47,7 +47,7 @@ D3 目标 Linux/GPU 组合 → D4 stock A→B restore → D5 拓扑与隔离
                                       D10 cleanup/failure → D11 G0 exit ruling
 ```
 
-当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：首次 C0 → fresh C1 重做 C0 → finite X* audit
+首次 C0 已由 r6 完成并封存。当前执行顺序已由 [G0 execution plan](G0_EXECUTION_PLAN.md) 固定：fresh C1 重做 C0 → finite X* audit
 → baseline-only freeze + S1 restore-value → sticky-reuse S2/S3 → 条件性 D1 observation → SGLang trace-only → behavior hook。
 `D6`–`D10` 只有 active survival ruling 通过后才能实施；S1 STOP 或 S2/S3 都为有效 null 时
 按 D14 在实现前 STOP，不满足 R/F，也不得为了展示工程量自动开发 D1。D12 的第一次 payload/resource 例外只允许

@@ -38,8 +38,9 @@
 
 - Historical scope：本任务最初将 stock A→B restore 后的两个 one-shot sentinel 作为 pre-D1 投资筛查；该 workload/Gate 合同已被 D14 的 `S1 RESTORE_VALUE_REGION`、sticky-reuse `S2 PUBLICATION_COST_ENVELOPE` 与 `S3 CAPACITY_EXTERNALITY` 取代，旧 sentinel 不得执行。
 - Depends on：T1、T4。
-- Outcome：当前 macOS/arm64 executor 无 NVIDIA GPU、Python 3.11、container runtime 或 pinned upstream checkout；在未启动任何 upstream 进程前形成 local execution-path STOP，C0 predicates=`NOT_EVALUATED`。此结果不评价目标 Linux compatibility，也不允许进入 hook。
-- Resume：当前入口以 D18 和 `PROJECT_PLAN` 为准。目标 Linux CUDA 环境先运行首次 C0：build/API/write-trigger admission 后，A Put → fresh B-L3 → fresh B-no-L3 必须同时证明 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`。只有首次 C0 `PASS`，才创建 fresh C1 cohort 并重做 C0；随后 finite source/runtime-audit X*、baseline-only freeze、S1 与 sticky-reuse S2/S3。只有 S1 存活、目标 remote Get 非近零、sticky-reuse publication mass 达到冻结阈值且 S2/S3 至少一个留下有效 signal，才自动解锁 T6；S1 STOP、remote Get≈0、mass 过小或 S2/S3 双 valid-false 均在 owned patch 前收口。D12 仅保留窄 payload/resource 例外。不得复用本次 macOS STOP、首次 C0 状态或 artifact 作为 target build、C1 eligibility、prefill survival 或 D14 Gate 证据。
+- Outcome at T5 closure：macOS/arm64 executor 无 NVIDIA GPU、Python 3.11、container runtime 或 pinned upstream checkout；在未启动任何 upstream 进程前形成 local execution-path STOP，C0 predicates=`NOT_EVALUATED`。此结果不评价目标 Linux compatibility，也不允许进入 hook。
+- Historical resume at T5 closure：目标 Linux CUDA 环境应先运行首次 C0，再在 C0 `PASS` 后创建 fresh C1 cohort 重做 C0；随后 finite source/runtime-audit X*、baseline-only freeze、S1 与 sticky-reuse S2/S3。D12 仅保留窄 payload/resource 例外。
+- Post-C0 status：first-C0 r6 已在 2026-08-13 同时通过 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`。当前必须建立 fresh C1 cohort 重做 C0；不得复用本次 macOS STOP、首次 C0 的 Store/worker state、coldness 或 artifact 作为 C1 eligibility、prefill survival 或 D14 Gate 证据。当前详细顺序以 `STATUS.md` 为准。
 - Evidence：[tracked STOP record](docs/implementation/G0_T5_LOCAL_PREFLIGHT_STOP.md)、`experiments/runs/local-macos-arm64-preflight-20260808T093232Z/` immutable local bundle、STATUS 更新。
 
 ## Completed contract closures
@@ -47,7 +48,7 @@
 ### T9 — 收口 C0 Restore Qualification 实验合同（COMPLETED 2026-08-11）
 
 - Scope：只讨论并冻结首次目标 Linux TCP cohort 的 C0 功能性请求：同一共享 prefix 的构造与 page-alignment 证据、A Put、B 本地冷态、fresh B-cold no-L3 control、固定 decode/output oracle、token accounting 与单值 outcome/STOP-next-action 分类。不得租机、启动上游、改源码、添加 trace/policy 或以 TTFT 替代 token-level oracle；具体 realization 以后续 D18 修订为准。
-- Depends on：T5 的 macOS STOP 记录、[G0 环境部署合同](docs/implementation/G0_DEPLOYMENT_ENVIRONMENT_DISCUSSION.md)；不依赖任何尚未取得的 Linux runtime result。
+- Depends on：T5 的 macOS STOP 记录、[G0 环境部署合同](docs/implementation/G0_DEPLOYMENT_ENVIRONMENT_DISCUSSION.md)；在 T9 收口时不依赖任何尚未取得的 Linux runtime result。
 - Completion：形成一个与 [G0 execution plan Task 1](docs/implementation/G0_EXECUTION_PLAN.md) 一致的 C0 输入/控制/观测/判定合同，并显式列出哪些值必须在 target runtime probe 后冻结。合同必须保持 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES` 为两个独立门；C0 PASS 只能称 restore qualification，不能称 T5 或 G0 完成。
 - Evidence：[C0 Restore Qualification Contract](docs/implementation/G0_C0_RESTORE_QUALIFICATION_CONTRACT.md)、canonical Task 1 oracle、C0 cohort contract 和 future realized manifest schema。该合同是 owner 决策，不是 Linux runtime artifact。
 
@@ -69,7 +70,8 @@
 
 - Scope：对 T9–T11 做 authority-first 交叉审查，并按 D18 的删除测试区分 correctness prerequisite、租机日 runtime fact 与 C0 后 hardening；确认没有把 source fact、owner decision、runtime artifact 与 inference 混写，也不把 C0、C1 或 TCP 结论外推到 RDMA/生产。
 - Depends on：T9、T10、T11。
-- Outcome：原 full-lifecycle harness、OCI/OSS 强制交付、双物理 GPU、same-AZ、独立 collector/classifier 均不再是首次 C0 blocker。当前 `NOT_READY_TO_RENT` 的精确 blocker 仅是内容寻址 input bundle 与单次 C0 runbook/raw-capture/checksum/off-host handoff 尚未物化并经 owner review。build/API/config、write threshold、GPU、C segment 和 private TCP 故意留在租机后、第一条 request 前；不能把它们伪造成租机前已通过。结论不升级任何 runtime claim。
+- Outcome at the 2026-08-12 ruling：原 full-lifecycle harness、OCI/OSS 强制交付、双物理 GPU、same-AZ、独立 collector/classifier 均不再是首次 C0 blocker；当时 `NOT_READY_TO_RENT` 的精确 blocker 是内容寻址 input bundle 与单次 C0 runbook/raw-capture/checksum/off-host handoff 尚未物化并经 owner review。该历史 ruling 不升级 runtime claim。
+- Post-C0 status：r6 后续实际完成并封存了首次 C0；T12 不再是当前租机 blocker 或 runtime 状态来源。fresh C1 的最小新 runbook/admission 是当前入口，详见 `STATUS.md` 与 first-C0 deployment retrospective。
 - Evidence：[D18](docs/project/DECISIONS.md)、[C0-first execution contract](docs/implementation/G0_PRE_RENTAL_EXECUTION_CONTRACT.md)、[C0 contract](docs/implementation/G0_C0_RESTORE_QUALIFICATION_CONTRACT.md)；authority-first adversarial review。
 
 ## Active

@@ -1,9 +1,10 @@
 # G0 启动前调查合同
 
 > 状态：**ROADMAP（调查任务说明，不是调查结论）**
-> 当前 G0 裁决：**G0-SOURCE BLOCKED**
+> Historical prelaunch verdict: **G0-SOURCE BLOCKED**（2026-08-06 的调查入口，不是当前 runtime 状态）
 > 面向对象：接手 G0 部署与验证前的独立 research agent
 > Canonical plan：[PROJECT_PLAN.md](../project/PROJECT_PLAN.md)；实际状态：[STATUS.md](../../STATUS.md)。如本文件与前二者冲突，以前二者为准。当前 active pre-D1 contract 是 D14 的 S1–S3；D12 仅保留窄 payload/resource 例外，旧 one-shot sentinel 不得由本调查合同重新启用。
+> Runtime follow-up：first-C0 r6 后续已 scoped 验证 stock restore qualification；本 prelaunch contract 的 R0–R6 仍只描述其当时缺失的 source/runtime evidence，不能替代或降低 fresh C1、S1–S3 的要求。
 
 ## 1. 目的和边界
 
@@ -45,10 +46,10 @@ artifact 并停止对应分支，不通过扩大 scope 来规避。
 `b058dc910619c9d4bce9e9e24117104ffc491fa6` 的**第一轮固定输入**，而非确认
 “Mooncake 最新版可用”。
 
-当前仅 SOURCE_VERIFIED：官方 release `v0.3.12.post1`、release commit 前缀
+在这份 prelaunch contract 写入时，仅 SOURCE_VERIFIED：官方 release `v0.3.12.post1`、release commit 前缀
 `6041a60`，以及 Linux x86_64 CPython 3.11 wheel SHA-256
 `8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439`。
-该候选与 pinned adapter 的兼容性仍是未决 blocker。
+该候选与 pinned adapter 的兼容性当时仍是未决 blocker；后续 r6 只为其记录的 stock target-Linux 组合提供 scoped runtime evidence。
 
 ### 必答问题
 
@@ -270,7 +271,7 @@ observation_id → StorageOperation operation_id → batch_ordinal / attempt_id
 | 调查包结果 | 可以进入的下一步 | 禁止动作 |
 |---|---|---|
 | R0 PASS，R1 PASS | 运行 stock external-store A→B restore（R4）。 | 尚不实现 policy。 |
-| R0 FAIL / STOP | 保持 `G0-SOURCE BLOCKED`，记录候选不兼容。 | 不换“最新版”继续宣称同一 pin。 |
+| R0 FAIL / STOP | 保持本 prelaunch source branch 的 `G0-SOURCE BLOCKED` 结论，记录候选不兼容。 | 不换“最新版”继续宣称同一 pin。 |
 | R1 FAIL / STOP | 收口为部署不可用或环境不满足。 | 不改为 RDMA/GDR/NIXL、同进程伪双 worker 或 worker-local L3。 |
 | R2 或 R3 STOP | 保留 restore/correctness 调查；停止 payload-efficiency / byte claim。 | 不用 aggregate 指标或 simulator 补齐 physical payload。 |
 | R4 PASS | 只形成首次 C0 qualification；随后必须在 fresh C1 cohort 重做 C0，再 finite source/runtime-audit X*、完成 baseline-only freeze、S1 `RESTORE_VALUE_REGION` 与 sticky-reuse S2/S3。只有 S1 存活、target remote Get 非近零、sticky-reuse publication mass 达到冻结阈值且 S2/S3 至少一个 signal，才自动继续 D1 observation 与 R5 trace-only；双 valid-false 后仅有符合 D12、在 D1 结果未知时冻结真实资源目标/预算/物质性判据的第一次 owner 例外可解锁 observation-only R5。 | 不复用首次 C0 状态/artifact 证明 C1 eligibility；不把 stock restore、one-shot negative control 或粗粒度 Store activity 当作 policy 效果；S1 STOP、remote Get≈0、sticky-reuse mass 过小或 S2/S3 双 valid-false 均在 owned patch 前 STOP，不满足 R/F，第一次例外也不授权 behavior hook。 |

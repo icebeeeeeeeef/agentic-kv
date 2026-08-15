@@ -9,4 +9,4 @@
 - [Finished-request metrics define uncached prompt tokens as prompt minus cached](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/observability/metrics_collector.py#L1693-L1700).
 - [Required fixed runtime contract](../../implementation/G0_EXECUTION_PLAN.md#preconditions-and-hard-admission-checks).
 
-No model hash, launch log, cold-state proof, Put/Get join, output artifact, cache-source response, or no-L3 token control exists.
+This prelaunch evidence packet contains no model hash, launch log, cold-state proof, Put/Get join, output artifact, cache-source response, or no-L3 token control. The later first-C0 r6 artifact is separate and does not make this prelaunch packet runtime evidence.

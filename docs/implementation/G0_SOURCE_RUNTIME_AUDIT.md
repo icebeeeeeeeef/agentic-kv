@@ -1,14 +1,14 @@
 # G0 Source and Runtime Audit
 
 > Audit date: 2026-08-05; restore-value accounting addendum: 2026-08-09
-> Verdict: **G0-SOURCE BLOCKED**
-> Scope: fixed SGLang source seam and the minimum Mooncake runtime contract. This is not a runtime result.
+> Historical source-phase verdict: **G0-SOURCE BLOCKED**
+> Scope: fixed SGLang source seam and the minimum Mooncake runtime contract. This audit is not a runtime result. A later first-C0 r6 artifact did pass stock restore qualification in one TCP/direct-I/O/L20 topology; it does not alter this audit's source facts or complete G0. Current state: [STATUS.md](../../STATUS.md).
 
 ## Verdict and evidence boundary
 
 The SGLang source seam is **SOURCE_VERIFIED** at
 [`b058dc910619c9d4bce9e9e24117104ffc491fa6`](https://github.com/sgl-project/sglang/commit/b058dc910619c9d4bce9e9e24117104ffc491fa6).
-The exact Mooncake release candidate is identifiable, but that SGLang commit neither declares a Mooncake package version nor locks a source revision, and this repository has no successful adapter/build probe. Therefore no Mooncake version may be called *compatible* yet. This is the sole G0-SOURCE blocker; it does not invalidate the verified SGLang facts below.
+At this audit's conclusion, the exact Mooncake release candidate was identifiable, but that SGLang commit neither declared a Mooncake package version nor locked a source revision, and no successful adapter/build probe had been retained. Therefore the source audit could not call any Mooncake version *compatible*. The later r6 artifact establishes only its recorded target-Linux stock combination, not a general compatibility claim; it does not invalidate the verified SGLang facts below.
 
 | State | Item |
 |---|---|
@@ -17,7 +17,7 @@ The exact Mooncake release candidate is identifiable, but that SGLang commit nei
 | SOURCE_VERIFIED | Mooncake release candidate `v0.3.12.post1`, release commit prefix `6041a60`, released 2026-07-25, and its CPython 3.11 x86_64 wheel SHA-256 `8b73bf8a4f1de741a73f04f32f1e73549c60bfbf7ee73710141ef1f8ea324439`. [Official release](https://github.com/kvcache-ai/Mooncake/releases/tag/v0.3.12.post1) |
 | Inference | `v0.3.12.post1` is the best first candidate: it predates the pinned SGLang commit and exposes the APIs the adapter imports/calls. This is not an adapter compatibility proof. |
 | SOURCE_VERIFIED | The release tag resolves to `6041a609a8c3af35e778f70db344f145c2914980`; the official CPython 3.11 Linux x86_64 wheel digest is recorded above. [Official commit](https://github.com/kvcache-ai/Mooncake/commit/6041a609a8c3af35e778f70db344f145c2914980) |
-| Unresolved / blocker | The target-Linux installed/build artifact identity and successful SGLang `b058` + Mooncake candidate runtime probe. The next executor must record `git rev-parse HEAD`, package version, wheel or build hash, and probe result. |
+| EXPERIMENTALLY_VALIDATED, scoped | first-C0 r6 retained the target-Linux installed/build identities and successful stock SGLang `b058` + Mooncake candidate A→C→fresh-B probe. Fresh C1 must record and re-admit its own `git rev-parse HEAD`, package version, wheel/build hash and probe result. |
 
 ## Verified SGLang write path
 
@@ -129,4 +129,4 @@ The pinned SGLang README documents a source build, external master/metadata/stor
 
 This source evidence supports the external non-zero segment configuration shape, but it does not prove that two arbitrary roomy/small values take effect in the unresolved target build or that capacity can be changed in place. D14 S3 `CAPACITY_EXTERNALITY` must therefore start a fresh Store for each value and retain that Store's runtime health/segment response; otherwise its capacity axis is `INCONCLUSIVE`.
 
-No runtime deployment, hook, trace field, candidate policy, payload reconciliation, or performance result exists in this repository. In particular, this audit must not be upgraded to `G0-RUNTIME VALIDATED`.
+This source audit contains no runtime deployment, hook, trace field, candidate policy, payload reconciliation or performance result. The separate first-C0 r6 artifact establishes only stock restore qualification; neither document may be upgraded to `G0-RUNTIME VALIDATED`.

@@ -301,7 +301,7 @@ sentinel workload/命名由本决议替换。
 ## D15 — C0/C1 实验合同物化
 
 **日期：** 2026-08-11
-**状态：** DECIDED；合同已收口，未运行时验证。D18 后续修订了首次 C0 的固定 8K/32-token、direct local metric
+**状态：** DECIDED；在本决议时合同已收口，未运行时验证。D18 后续修订了首次 C0 的固定 8K/32-token、direct local metric
 和双物理 GPU realization；双 predicate、no-L3 control 与 token/output oracle 保持有效。
 
 ### 采用
@@ -343,7 +343,7 @@ behavior hook、candidate、`VALUE_DENSITY`、RDMA 或 benchmark。它仅使 T9/
 ## D16 — 短生命周期 cohort 的租机前执行与证据合同
 
 **日期：** 2026-08-11
-**状态：** DECIDED；合同已收口，未实施、未租机、无 runtime artifact。D18 将本决议的完整 lifecycle 限定为
+**状态：** DECIDED；在本决议时合同已收口，未实施、未租机、无 runtime artifact。D18 将本决议的完整 lifecycle 限定为
 repeated/formal cohort 的按需 hardening；它不再定义首次 C0 的 correctness entrance。
 
 > **FORMAL_COHORT ONLY：** 下述 OSS、三角色 RAM、双 GPU、finalizer、deadline/quarantine、terminal marker、
@@ -451,11 +451,11 @@ hardening。它们不得作为首次 C0 的前置，也不得在 C0 失败前凭
 
 ### 历史 Gate 影响（已由 D18 取代首次 C0 blocker）
 
-以下只记录 D17 在 2026-08-11 的裁决，不是当前 `NOT_READY_TO_RENT` blocker；当前入口以 D18、STATUS 和 T12 为准。
+以下只记录 D17 在 2026-08-11 的裁决，不是当前 `NOT_READY_TO_RENT` blocker；当前项目状态以 `STATUS.md` 为准，Gate/STOP 以 D18 与 `PROJECT_PLAN.md` 为准。
 
 本决议只改变首次 C0 的执行优先级与 T12 `READY_TO_RENT` 的前置范围。它不改变 SOP、PROJECT_PLAN、D14/D15
-的 Gate/STOP，也不升级任何 claim state。当前 OCI build/stage、OSS readback 和 thin runner/collector/classifier
-均未实现，因此当前仍是 `NOT_READY_TO_RENT`。这些租机前项目真实通过并经 owner review 后才可授权租机；第 4 项
+的 Gate/STOP，也不升级任何 claim state。**在 D17 作出时** OCI build/stage、OSS readback 和 thin runner/collector/classifier
+均未实现，因此当时是 `NOT_READY_TO_RENT`。这些租机前项目真实通过并经 owner review 后才可授权租机；第 4 项
 host GPU/Store/private-TCP 是租机后、第一条 request 前的 admission check，不是可在租机前假装已通过的条件。
 
 ## D18 — 首次 C0 的 correctness-only 入口与 evidence-driven hardening
@@ -464,6 +464,8 @@ host GPU/Store/private-TCP 是租机后、第一条 request 前的 admission che
 **状态：** DECIDED；取代 D17 对首次 C0 前置范围的裁决，并修订 D15 中固定 8K/32-token、direct-local-metric
 与双物理 GPU 等具体 C0 realization；D15 冻结的双 predicate、no-L3 control 和 token/output oracle 不变。它不是
 runtime evidence，不产生租机授权，也不改变 SOP、PROJECT_PLAN 的 Gate/STOP 或 D14 的生存条件。
+
+> **Runtime follow-up (2026-08-13; does not amend this decision):** first-C0 r6 later completed the scoped stock A→external C→fresh B qualification with both predicates `PASS`. The present next action is fresh C1 C0, not the historical `NOT_READY_TO_RENT` ruling below; see [STATUS.md](../../STATUS.md).
 
 ### 原则
 
@@ -523,6 +525,6 @@ C0 的环境状态或资格证明。
 → S1 → sticky-reuse S2/S3。D18 不改变 C0 必须同时满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`，也不
 削弱 S1 hard veto 或 D14 STOP。
 
-当前仍是 `NOT_READY_TO_RENT`，但精确 blocker 仅是内容寻址输入 bundle 与单次 C0 runbook/raw-capture/off-host
+**在本决议作出时** 是 `NOT_READY_TO_RENT`，精确 blocker 是内容寻址输入 bundle 与单次 C0 runbook/raw-capture/off-host
 handoff 尚未物化并经 owner review。目标 Linux/CUDA、build/API、write threshold、GPU、C segment 与 private TCP
-均是只能在租机后验证的 runtime admission facts，不得伪装成租机前 blocker 或已通过证据。
+均是只能在租机后验证的 runtime admission facts，不得伪装成租机前 blocker 或已通过证据。后续实际状态以 `STATUS.md` 为准。

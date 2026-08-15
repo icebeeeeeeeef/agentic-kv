@@ -1,10 +1,10 @@
 # G0 环境部署合同
 
-> 状态：**OWNER-DECIDED DEPLOYMENT CONTRACT / NON-AUTHORITY / 无运行时证据**（2026-08-12）。
+> 状态：**OWNER-DECIDED DEPLOYMENT CONTRACT / NON-AUTHORITY**（2026-08-12）。本合同本身不是运行时证据；first-C0 r6 的后续运行时结果以 [STATUS.md](../../STATUS.md) 和 [deployment retrospective](G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md) 为准。
 > 用途：记录首次目标 Linux CUDA C0 的最小物理边界、租机日检查与 C1 分界；它本身不授权租机、部署、改源码或开始 G0。
 > 权威顺序：[PROJECT_PLAN.md](../project/PROJECT_PLAN.md) Gate/STOP > [STATUS.md](../../STATUS.md) 实际状态 > [TASKS.md](../../TASKS.md) > implementation contracts > decisions。
 
-当前只有 pinned source/release identity 是 `SOURCE_VERIFIED`；目标 Linux build/API、external Store、A Put → cold B Get 和任何网络/性能现象均没有 runtime artifact。D18 取代 D17 对首次 C0 前置范围的裁决：先做 correctness-only C0，随后按真实 blocker 增量 harden，不预建云端实验平台。
+在本合同写入时，只有 pinned source/release identity 是 `SOURCE_VERIFIED`；目标 Linux build/API、external Store、A Put → cold B Get 和任何网络/性能现象均没有 runtime artifact。后续 first-C0 r6 已 scoped 验证 stock A Put→external C→fresh B 的 restore 与 token-level survival；它仍不是 S1、G0、性能、cross-GPU、multi-host 或通用 compatibility evidence。D18 的原则不变：只按真实 blocker 增量 harden，不预建云端实验平台。
 
 ## 1. 首次 C0 的唯一问题
 
@@ -122,11 +122,11 @@ RDMA 当前被 canonical scope 排除，不能用于挽救 TCP 的 `FAIL`、`STO
 
 | 项目 | 状态 | 合法处理 |
 |---|---|---|
-| input bundle + one-shot runbook/handoff | fail-closed r7 已本地物化并完成 owner review；bundle owner root=`207f866e2bbc83f96207d112a8d10730280fddd91422b59f02e7b858d9b7c477`，独立 runbook owner root=`577588c07b7cb7d5a593f5dd2b0d69a8d733a6c6cc898767374dc7a3b241b4ec`；租机后 C-host probe 已暴露并收窄真实 runtime blockers，尚未完成正式 admission | 继续按最新 root 重跑 C-host/worker admission；不把本地 checksum/test 或 C-host probe 写成 C0 evidence |
+| input bundle + one-shot runbook/handoff | fail-closed r7 已本地物化并完成 owner review；bundle owner root=`207f866e2bbc83f96207d112a8d10730280fddd91422b59f02e7b858d9b7c477`，独立 runbook owner root=`577588c07b7cb7d5a593f5dd2b0d69a8d733a6c6cc898767374dc7a3b241b4ec`；后续 r6 使用该固定输入完成首次 C0 | 为 fresh C1 吸收真实 blocker 后建立新的 reviewed root；不把 r6 的输入根、Store 或 artifact 写成 C1 evidence |
 | region/AZ、价格、库存、quota、instance/image ID | 租机日 `UNRESOLVED` | 当日选择并记 manifest；same-AZ 不作为 C0 correctness Gate |
-| host driver/runtime、build/API、page size、write threshold、GPU UUID | target runtime `UNRESOLVED` | 首个 request 前 probe；失败=`BLOCKED_BEFORE_C0` |
-| C segment/private endpoint/Store-port exposure | target runtime `UNRESOLVED` | 首个 request 前 probe；失败=`BLOCKED_BEFORE_C0` |
-| Put/Get、B cold、token/output oracle、off-host artifact | runtime `UNRESOLVED` | 仅 retained raw artifact 可升级具体 claim |
+| host driver/runtime、build/API、page size、write threshold、GPU UUID | first-C0 r6 `EXPERIMENTALLY_VALIDATED`，fresh C1 `UNRESOLVED` | C1 首个 request 前重新 probe；失败=`BLOCKED_BEFORE_C0` |
+| C segment/private endpoint/Store-port exposure | first-C0 r6 `EXPERIMENTALLY_VALIDATED`，fresh C1 `UNRESOLVED` | C1 首个 request 前重新 probe；失败=`BLOCKED_BEFORE_C0` |
+| Put/Get、B cold、token/output oracle、off-host artifact | first-C0 r6 `EXPERIMENTALLY_VALIDATED`，fresh C1 `UNRESOLVED` | r6 只能支持 scoped restore qualification；C1 仅以自己的 retained raw artifact 升级对应 claim |
 | C1 topology/X*/S1–S3 数值与 witnesses | ROADMAP / `UNRESOLVED` | fresh C1 baseline-only 阶段冻结 |
 
 本合同不产生兼容、remote restore、token savings、网络瓶颈、性能或生产适用性结论。`DECIDED` 只代表 owner 选择；`SOURCE_VERIFIED` 只代表 pinned source 事实；runtime claim 只能由对应 retained artifact 更新到 [STATUS.md](../../STATUS.md)。
