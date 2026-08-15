@@ -21,6 +21,7 @@ dist/
 experiments/runs/
 results/*
 !results/.gitkeep
+!results/INDEX.md
 data/
 *.log
 

@@ -3,7 +3,7 @@
 > 文档性质：项目总体规划、证据合同与统一口径  
 > 统一版本：2026-08-10
 > 当前裁决：**Conditional Select（有条件立项）**  
-> 当前 claim state：SGLang 接缝及 Mooncake `v0.3.12.post1` candidate source 为 SOURCE_VERIFIED；其 runtime compatibility 仍 UNRESOLVED。负载、探针、conditional ledger、hook 与策略均仍是 ROADMAP，尚无 IMPLEMENTED_UNVALIDATED 或 EXPERIMENTALLY_VALIDATED 的个人产出
+> 当前 claim state 与实际完成状态以 [STATUS.md](../../STATUS.md) 为准。截至当前 retained evidence，first-C0 r6 已在其记录的固定 SGLang/Mooncake/TCP/direct-I/O/L20 组合中完成 scoped stock shared-L3 restore qualification，并证明非零 prefill substitution；该结果不构成通用 compatibility、fresh C1、S1、完整 G0、trace/hook/candidate 或 TTFT/Goodput 性能结论。
 > 本版不做时间排期。所有阶段按证据依赖排序，不按周数排序。
 >
 > 方法论关系：本计划是 [PROJECT_EVALUATION_SOP.md](PROJECT_EVALUATION_SOP.md) 在本项目上的具体化。SOP 约束选题、能力信号、证据与主张边界；本计划定义当前唯一机制、Gate、STOP 与实验合同。两者发生方法论冲突时，修订本计划而非降低 SOP 标准；实际完成状态仍以 [STATUS.md](../../STATUS.md) 为准。
@@ -307,8 +307,14 @@ intent-coupled publication 当前为空集；这张图不授权为它增加 queu
 **b058dc910619c9d4bce9e9e24117104ffc491fa6**
 
 Mooncake `v0.3.12.post1` candidate 的 exact source commit 已固定为
-`6041a609a8c3af35e778f70db344f145c2914980`（SOURCE_VERIFIED）；其 target-Linux wheel/build identity、
-API/build probe 与与该 SGLang adapter 的 runtime compatibility 仍 UNRESOLVED，必须在 G0 部署时与镜像/二进制 hash 一并记录。不得只写“最新版”，也不得把 tag/source audit 误写成 runtime compatible。
+`6041a609a8c3af35e778f70db344f145c2914980`（SOURCE_VERIFIED）。在首次 source audit 完成时，target-Linux
+wheel/build identity、API/build probe 及其与该 SGLang adapter 的 runtime compatibility 尚无 retained artifact，
+因此当时仍为 UNRESOLVED；后续 first-C0 r6 已在其 manifest 记录的固定
+SGLang/Mooncake/TCP/direct-I/O/L20 组合中，以 stock A → external C → fresh B 完成 scoped restore
+qualification，并证明非零 prefill substitution。该结果不升级为通用版本兼容性，也不覆盖 fresh C1、S1、完整
+G0、cross-GPU、multi-host 或性能结论。fresh C1 必须重新记录、校验并准入自己的 realized source、
+wheel/build、package、driver、model 与 runtime identity，不得继承 r6 的 Store、worker state、coldness 或 predicate
+artifact。不得只写“最新版”，也不得把 tag/source audit 误写成 runtime compatible。
 
 首轮使用普通 dense model，并固定：
 
