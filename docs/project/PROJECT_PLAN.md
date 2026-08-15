@@ -1068,8 +1068,9 @@ artifact 必须同时写清它们，不能用一个 PASS 掩盖另一项尚未�
 | Claim | 当前状态 | 当前证据 | 允许措辞 |
 |---|---|---|---|
 | SGLang HiCache 存在 L1/L2/L3 分层路径 | SOURCE_VERIFIED | 官方文档与 pinned source | “源码验证了分层路径” |
-| L2 ack 后、L3 write_storage 前存在候选接缝 | SOURCE_VERIFIED，待 runtime test | pinned source audit | “已定位接缝，待运行时验证” |
-| Mooncake adapter 支持 shared L3 路径 | SOURCE_VERIFIED，待本地部署验证 | adapter/README | “计划以 Mooncake 验证跨 worker 复用” |
+| L2 ack 后、L3 write_storage 前存在候选接缝 | SOURCE_VERIFIED；owned hook runtime test 仍为 ROADMAP | pinned source audit；first-C0 只走 stock 路径，未测试 hook | “已定位接缝；hook 仍待运行时验证” |
+| pinned Mooncake adapter 的 stock shared-L3 恢复路径 | EXPERIMENTALLY_VALIDATED，仅 first-C0 r6 | r6 的 stock A→external C→fresh B raw artifact；TCP/direct-I/O/L20 单一拓扑 | “该固定拓扑下已验证 stock cross-process restore；不外推到 C1、hook 或通用兼容性” |
+| first-C0 restore qualification | EXPERIMENTALLY_VALIDATED，仅 first-C0 r6 | `RESTORE_PATH_PASS=PASS`、`REMOTE_VALUE_SURVIVES=PASS`；512 prompt tokens，B-L3 448 storage-cached / 64 uncached，B-no-L3 0 / 512 | “stock restore 链路和 token-level prefill substitution 已在 r6 通过；仍不是 S1/G0/性能结论” |
 | SGLang 社区把 HiCache 准入/策略视作持续演进问题 | SOURCE_VERIFIED | roadmap issue | “官方 roadmap 证明问题域真实” |
 | Prefix-DAG generator、trace、hook、policy | ROADMAP | 尚未在本项目实现 | 只能说“计划实现” |
 | Conditional admission ledger | ROADMAP，gated behind G2a + O1 | 尚未在本项目实现；G1/G2a 与 O1 STOP 分支均不要求它 | 只能说“若 G2a/O1 未停止方向，计划在 G2b 实现候选拒绝工具” |
@@ -1318,28 +1319,28 @@ null 触发，它是 **pre-implementation direction STOP**：不满足 R/F，也
 - 直接命中 KV cache pool、hierarchical cache、admission、lifecycle 与 TTFT/SLO；
 - 正结果和负结果都可交付，不依赖论文级 novelty。
 
+首次 C0 已在 r6 完成 scoped restore qualification：stock A→external C→fresh B 的两个 predicate 均通过；它消除了“目标 runtime 的 shared-L3 restore 是否真实存在”的资格疑问，但不是 S1、G0 或性能结果。
+
 仍然“有条件”的理由：
 
 - 尚未运行时证明 DROP 不修改 L2 路径、配置、refcount 正确性与 eviction 实现；
-- 尚未证明跨 worker Mooncake restore 在目标模型上有稳定净价值；
+- 尚未在 fresh C1、预注册 target coordinate 中证明 restore 相对 recompute 有稳定净价值；
 - 尚未测出 ADMIT_ALL 在固定 horizon 下的 not-read payload 或其他可行动浪费；
 - 尚未证明最强静态基线的 own-arm lifecycle trace 中存在可行动 residual；
 - 尚无任何 X/Y 可用于简历。
 
 ### 21.2 唯一正确的下一动作顺序
 
-1. 租机前物化内容寻址的 pinned source/wheel/model/tokenizer/config 输入 bundle，以及单次 C0 runbook、raw capture、checksum 和 off-host handoff；OCI/OSS 只是可选交付方式，不是 correctness Gate。经 owner review 后才允许租机；
-2. 租机后、首个 request 前核验目标 host 的实际输入 hash、build/API/config、page size、stock write policy/threshold、C nonzero bounded segment、worker `global_segment_size=0` 与 private TCP。入口失败记 `BLOCKED_BEFORE_C0`，两个 C0 predicate 均为 `NOT_EVALUATED`；
-3. 用达到实际 stock write condition 的最小固定 A 请求序列取得 Put terminal；A 退出后创建 fresh B-L3，再创建 fresh B-no-L3 control。只有 token/output、coldness、A→C→B join 和 token-level reduction 同时可裁决时，才给首次 C0 填写 outcome；
-4. 首次 C0 同时满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES` 后，创建 fresh C1 cohort 并重做 C0；不得复用首次 C0 的 Store、worker state、coldness 或 artifact 作为 C1 资格；
-5. 在 C1 内 finite source/runtime audit X* 的 actual `write_through_selective` semantics、quota/adaptor wiring、metrics/prefetch threshold 和 relevant PR impact；未复核项保持 `SOURCE_TO_REVERIFY` 或从 X* construction 移除；
-6. 在 stock、无本项目 patch 的系统上完成 baseline-only calibration 和 checksum preregistration，先运行 S1 `RESTORE_VALUE_REGION`，再在 sticky-reuse 上运行 S2 `PUBLICATION_COST_ENVELOPE` 与 S3 `CAPACITY_EXTERNALITY`；one-shot 只作为 X* negative control；
-7. S1 无价值 region/remote Get≈0 则 STOP；S2/S3 只有区间下界越过物质性阈值才留下 signal，二者都以区间上界排除阈值才按 D14 在实现前 STOP；区间跨阈值只能 `INCONCLUSIVE`；
-8. 双有效 false 后仍仅允许 D12 已有、owner 在 D1 结果未知时冻结的真实 payload/resource 例外；第一次授权不包含 behavior hook；
-9. 只有 active S1–S3 ruling 或 D12 第一次例外授权允许继续时，才实施 Mooncake pre-collapse trace-only observation 与完成 stock payload 归因所需的最小 SGLang opaque correlation，并证明 trace-disabled/trace-enabled 不干扰；
-10. trace-only 通过后才实现 ALWAYS_ADMIT / ALWAYS_DROP / POLICY_ERROR_FAIL_OPEN 最小 hook，并验证 prefix closure、dedup/race、fail-open 与 async/shutdown-detach terminal；payload exception branch仍须先取得 D12 第二次 owner ruling；
-11. 用受控 Prefix-DAG 跑 G2a opportunity test，并在任何 candidate design 前，以真实在线 O1 cheating oracle vs actual X* 做 stop-only upper-bound；O1 无法物质性胜出即收口；
-12. 只有 G2a/O1 都未停止方向，才实现最小 conditional ledger；只有新的 owner decision 根据 residual 定义 candidate 后，才实现 runtime candidate 并标为 `IMPLEMENTED_UNVALIDATED`；只有 G3 `TARGET_HELD_OUT` 在线结果通过，才升级公开标题和对应效率/性能 claim state。
+1. 将 first-C0 r1–r5 实际暴露的 blocker 写入新的、owner-reviewed C1 runbook：stable CPython 3.11.13 + headers、`libssl-dev`、可发现的 venv/ninja 路径、`SGLANG_BUILD_RUST_EXTS=none`，以及已在 r6 工作的 stock `--hicache-io-backend direct`；不预建 OCI、通用 runner、自动 classifier/finalizer 或完整依赖平台；
+2. 创建 fresh C1 cohort，以新 keyspace、独立 C/worker state、request ledger 与新 evidence destination 完整重做 C0。r6 的命令/依赖配方可复用，r6 的 Store、coldness、artifact 与 predicate 不可复用；
+3. C1 C0 再次同时满足 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES` 后，完成 finite source/runtime audit X* 的 actual `write_through_selective` semantics、quota/adaptor wiring、metrics/prefetch threshold 和 relevant PR impact；未复核项保持 `SOURCE_TO_REVERIFY` 或从 X* construction 移除；
+4. 在 stock、无本项目 patch 的系统上完成 baseline-only calibration 和 checksum preregistration，先运行 S1 `RESTORE_VALUE_REGION`，再在 sticky-reuse 上运行 S2 `PUBLICATION_COST_ENVELOPE` 与 S3 `CAPACITY_EXTERNALITY`；one-shot 只作为 X* negative control；
+5. S1 无价值 region/remote Get≈0 则 STOP；S2/S3 只有区间下界越过物质性阈值才留下 signal，二者都以区间上界排除阈值才按 D14 在实现前 STOP；区间跨阈值只能 `INCONCLUSIVE`；
+6. 双有效 false 后仍仅允许 D12 已有、owner 在 D1 结果未知时冻结的真实 payload/resource 例外；第一次授权不包含 behavior hook；
+7. 只有 active S1–S3 ruling 或 D12 第一次例外授权允许继续时，才实施 Mooncake pre-collapse trace-only observation 与完成 stock payload 归因所需的最小 SGLang opaque correlation，并证明 trace-disabled/trace-enabled 不干扰；
+8. trace-only 通过后才实现 ALWAYS_ADMIT / ALWAYS_DROP / POLICY_ERROR_FAIL_OPEN 最小 hook，并验证 prefix closure、dedup/race、fail-open 与 async/shutdown-detach terminal；payload exception branch仍须先取得 D12 第二次 owner ruling；
+9. 用受控 Prefix-DAG 跑 G2a opportunity test，并在任何 candidate design 前，以真实在线 O1 cheating oracle vs actual X* 做 stop-only upper-bound；O1 无法物质性胜出即收口；
+10. 只有 G2a/O1 都未停止方向，才实现最小 conditional ledger；只有新的 owner decision 根据 residual 定义 candidate 后，才实现 runtime candidate 并标为 `IMPLEMENTED_UNVALIDATED`；只有 G3 `TARGET_HELD_OUT` 在线结果通过，才升级公开标题和对应效率/性能 claim state。
 
 这份规划的核心纪律是：
 

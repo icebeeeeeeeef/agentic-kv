@@ -3,6 +3,7 @@
 > 状态：**OWNER-DECIDED CONTRACT / 非运行时证据**（2026-08-12）
 > 权威：本合同实现 [G0 execution plan Task 1](G0_EXECUTION_PLAN.md#task-1-establish-stock-external-store-recovery-and-prefill-survival) 的输入、控制和观测要求；不得改变 [PROJECT_PLAN.md](../project/PROJECT_PLAN.md) 的 Gate/STOP。
 > 结论边界：C0 通过只能称为 **restore qualification / S1 input**，不是 S1 通过、T5 完成、G0 完成、性能结论或进入 D1/T6/T7 的授权。
+> 运行时后续：first-C0 r6 于 2026-08-13 按本合同执行并双 predicate `PASS`；它是本合同的 scoped runtime artifact，不改变本合同的边界。fresh C1 必须独立重做 C0，当前事实以 [STATUS.md](../../STATUS.md) 为准。
 
 ## 1. 目的和状态边界
 
@@ -21,7 +22,7 @@ REMOTE_VALUE_SURVIVES
 
 `uncached_prompt_tokens = prompt_tokens - cached_tokens`。TTFT、Store NIC/CPU 和任何单次“命中”日志都只可作为诊断；它们不能替代 token-level oracle。
 
-截至本合同写入时，SGLang 在 pinned source 暴露 storage-cached token accounting 是 `SOURCE_VERIFIED`；目标 Linux build、A Put、B Get、local coldness 和所有 predicate 均无 runtime artifact，保持 `UNRESOLVED`。
+截至本合同写入时，SGLang 在 pinned source 暴露 storage-cached token accounting 是 `SOURCE_VERIFIED`；当时目标 Linux build、A Put、B Get、local coldness 和所有 predicate 均无 runtime artifact。后续 r6 仅在首次 C0 的固定 TCP/direct-I/O/L20 拓扑中填补了该资格证据，不能替代 fresh C1 或 S1。
 
 首次 C0 的执行入口服从 [D18](../project/DECISIONS.md#d18--首次-c0-的-correctness-only-入口与-evidence-driven-hardening)：
 租机前只物化内容寻址输入与单次 runbook/raw capture/off-host handoff；target host 的 build/API/config、实际

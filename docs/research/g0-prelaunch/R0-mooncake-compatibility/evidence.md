@@ -6,4 +6,4 @@
 - [Linux-only wheel guard](https://github.com/kvcache-ai/Mooncake/blob/6041a609a8c3af35e778f70db344f145c2914980/mooncake-wheel/setup.py#L5-L12).
 - [Pinned adapter import/call boundary](https://github.com/sgl-project/sglang/blob/b058dc910619c9d4bce9e9e24117104ffc491fa6/python/sglang/srt/mem_cache/storage/mooncake_store/mooncake_store.py#L268-L292).
 
-No runtime command was executed: no target Linux/GPU installation or service exists in this workspace.
+No runtime command is retained in this prelaunch evidence packet: it contains no target Linux/GPU installation or service artifact. The later first-C0 r6 evidence is separate.

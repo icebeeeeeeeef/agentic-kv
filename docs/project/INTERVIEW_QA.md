@@ -16,7 +16,7 @@ PASS 只能支持它实际覆盖的主张，不能自动升级完整 G0 或性�
 
 ## Current defense boundary
 
-当前唯一可以确认的个人产出是仓库组织、规划材料和 G0 源码审计；L3 admission hook、instrumentation、workload generator、conditional ledger、在线策略和性能收益仍未完成。固定 SGLang source 上的接缝，以及 Mooncake `v0.3.12.post1` 的 release metadata 属于 `SOURCE_VERIFIED`；该候选与 pinned SGLang adapter 的 build/runtime compatibility、exact build hash 和跨 worker runtime path 仍未解决，因此当前 verdict 仍是 `G0-SOURCE BLOCKED`。
+当前可确认的个人产出包括仓库组织、规划材料、G0 源码审计，以及 first-C0 r6 的 stock restore qualification。固定 SGLang source 上的接缝仍是 `SOURCE_VERIFIED`；pinned SGLang adapter + Mooncake `v0.3.12.post1` 已在 r6 的 TCP/direct-I/O/L20 拓扑完成 A→external C→fresh B 的 `RESTORE_PATH_PASS` 与 `REMOTE_VALUE_SURVIVES`，因而这一**单一**组合是 `EXPERIMENTALLY_VALIDATED`。L3 admission hook、instrumentation、workload generator、conditional ledger、在线策略、fresh-C1 C0、S1–S3 与任何性能收益仍未完成。r6 不支持 cross-GPU、multi-host、生产或通用 compatibility claim，也不构成完整 G0。
 
 权威细节见：
 
@@ -53,7 +53,7 @@ PASS 只能支持它实际覆盖的主张，不能自动升级完整 G0 或性�
 
 ### Q: 这会不会只是一个 `decide()` 函数加参数扫描？
 
-**Claim state：** `SOURCE_VERIFIED + ROADMAP`
+**Claim state：** `SOURCE_VERIFIED + ROADMAP`；first-C0 r6 仅建立 stock restore prerequisite
 
 **短回答：** 通过 pre-D1 存活筛查并进入工程实现后，不把候选策略获胜作为工程完成前提。最低交付是独立的
 trace-only correlation、pre-collapse payload observation、L2 ack 后的 fail-open seam、prefix closure 与 async terminal oracle；它们都在真实
@@ -87,7 +87,7 @@ patch；不能用 policy 绕过不可信 telemetry。
 
 ### Q: 为什么成功的 remote Get 还不足以让 G0 通过？
 
-**Claim state：** `SOURCE_VERIFIED + ROADMAP`
+**Claim state：** `SOURCE_VERIFIED + EXPERIMENTALLY_VALIDATED（仅 first-C0 r6）+ ROADMAP`
 
 **短回答：** 成功 Put/Get 和输出一致只形成 `RESTORE_PATH_PASS`，证明 shared-L3 链路功能正确；项目还要求
 `REMOTE_VALUE_SURVIVES`：fresh B 的 `cached_tokens_details.storage` 非零，且相对相同请求的 B-cold no-L3
@@ -101,8 +101,7 @@ hook。TTFT 在 G0 只作诊断，不能替代 token-level oracle，也不能形
 **反例与 trade-off：** restore 可能确实减少 prefill，但 TCP Get 使 TTFT 暂时不降；这仍允许继续验证机制，
 但必须在后续 G2a/G3 诚实检验净系统价值。反之，一次 TTFT 偶然降低但 prefill 未减少，不能救活项目。
 
-**不能声称：** 当前没有 Linux CUDA runtime artifact，两个 outcome 都仍是 ROADMAP，不能说 restore 已工作或
-已减少 prefill。
+**不能声称：** r6 只证明指定 stock TCP/direct-I/O/L20 拓扑的 restore 和 token-level prefill substitution；不能说 fresh C1、S1、完整 G0、TTFT/Goodput、跨 GPU/multi-host 或生产已经通过。
 
 ### Q: L3 admission 为什么可能改善 Goodput？减少写入字节还不够吗？
 
@@ -140,14 +139,14 @@ reason。
 
 **反例与 trade-off：** S2/S3 都不是 admission proof，缺少 telemetry 时也看不到具体 eviction。S1 在可裁决 region 内 restore 不优于 recompute、remote Get≈0，或 S2/S3 都以区间排除规则成为有效 false 时，均在 owned patch 前 STOP，且不满足 R/F；关键压力/公平条件不可证，或冻结预算后区间仍跨物质性阈值，只能记为 `INCONCLUSIVE`。不能把 runtime 工程量或“更深负结果”本身当作问题价值。
 
-**不能声称：** 当前尚无目标 Linux runtime artifact，不能说写争用或容量压力已经存在；D1 未完成前也不能把
+**不能声称：** first-C0 r6 只证明 restore 机制，不能说写争用或容量压力已经存在；D1 未完成前也不能把
 NIC 流量或 submitted bytes 称为 `new_physical_put_bytes` 或 payload-efficiency。
 
 ### Q: S2/S3 都是有效 null，或 S1 不存在 restore-value region，为什么不继续把 runtime backbone 做完？
 
 **Decision state：** `DECIDED`（D12 + D14）
 
-**Claim state：** `ROADMAP`
+**Claim state：** `ROADMAP`；其 restore 前提仅 first-C0 r6 为 `EXPERIMENTALLY_VALIDATED`
 
 **短回答：** Runtime backbone 是“若要称为 runtime flagship 的最低工程线”，不是无条件施工承诺。S2/S3 在预注册 pressure coordinate 下都以效应区间上界低于物质性阈值成为有效 null，说明当前 sticky-reuse publication 的两条机会链都没有留下可行动投资信号；S1 若无 restore-value region 更早 STOP。此时继续
 写 D1/hook 只为补工程量，会失去真实目标函数。项目按 D12/D14 在 owned patch 前 STOP，保留 characterization 和
@@ -256,8 +255,7 @@ target Linux/CUDA、build/API、实际 write threshold、GPU、Store segment 和
 另一方面，checksum、A Put terminal、B cold certificate、A→C→B join、fresh no-L3 control 和 deterministic output
 oracle 不能删，因为删掉会产生假结论或不可复核证据。
 
-**不能声称：** 目前没有已物化 input bundle/runbook、target-host probe、cloud/runtime artifact 或 C0 结果；D18 不是
-`READY_TO_RENT`，也不能声称自动部署、自动归档、cross-GPU/multi-host 或生产适用性。
+**不能声称：** first-C0 的 input bundle/runbook、target-host probe 与 r6 runtime artifact 已存在，但这不表示自动部署、自动归档、fresh C1、cross-GPU/multi-host 或生产适用性已通过。
 
 ## Question template
 
