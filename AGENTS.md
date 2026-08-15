@@ -94,7 +94,8 @@ Prefix-DAG 是 workload；Mooncake 是 upstream shared-L3 substrate；conditiona
 ## 实施纪律
 
 - 所有源码事实绑定明确 commit；先读真实源码，再回答、设计或修改。
-- 当前 SGLang source anchor 是 `b058dc910619c9d4bce9e9e24117104ffc491fa6`；Mooncake exact commit 尚待 G0 pin。
+- 当前 SGLang source anchor 是 `b058dc910619c9d4bce9e9e24117104ffc491fa6`；Mooncake source anchor 是 `6041a609a8c3af35e778f70db344f145c2914980`（`SOURCE_VERIFIED`）。当前实际状态以 [STATUS.md](STATUS.md) 为准；固定 source 与 scoped runtime evidence 见 [G0 source/runtime audit](docs/implementation/G0_SOURCE_RUNTIME_AUDIT.md) 和 [first-C0 deployment retrospective](docs/implementation/G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md)。
+- first-C0 r6 只在其记录的 stock TCP/direct-I/O/L20 组合中完成 shared-L3 restore qualification 和非零 prefill substitution；这不是通用 SGLang/Mooncake compatibility、fresh C1、S1、完整 G0 或性能结论，也不支持 cross-GPU、multi-host 或 production 外推。fresh C1 必须依 [C0 restore qualification contract](docs/implementation/G0_C0_RESTORE_QUALIFICATION_CONTRACT.md) 重新记录、校验并准入自己的 realized source/build/package/runtime identity，不得继承 r6 的 Store 状态、worker 状态或 predicate artifact。
 - behavior hook 与纯观测 instrumentation 分 commit、分测试、分 claim。
 - 固定 L2 指算法、容量、配置、write-through 和 eviction 实现固定；不要求不同 treatment 的 L2 内容或 event sequence 相同。
 - 不使用某一 arm 的 eligibility stream 作为另一 policy 的闭环反事实。

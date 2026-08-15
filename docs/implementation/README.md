@@ -14,6 +14,15 @@ open decisions, and runtime artifacts. None of them may upgrade claim state by t
 - [G0 First-C0 Minimal Execution Contract](G0_PRE_RENTAL_EXECUTION_CONTRACT.md):
   owner-decided content-addressed input, one-shot runbook/raw capture/off-host handoff and
   rental-day admission boundary; not an implemented harness, a rental authorization, or runtime evidence.
+- [First-C0 Deployment Retrospective](G0_FIRST_C0_DEPLOYMENT_RETROSPECTIVE.md): scoped runtime
+  retrospective for first-C0 r1–r6, recording observed bootstrap/runtime blockers, minimal fixes and
+  the r6 known-working combination; not fresh-C1 evidence, general compatibility or a performance result.
+- [Observability and Measurement Contract](OBSERVABILITY_AND_MEASUREMENT_CONTRACT.md):
+  activation-gated trace/correlation/metric/evidence-integrity contract; documented fields and events
+  are not implemented capabilities and do not authorize trace, D1 or a behavior hook.
+- [Runtime Invariant and Failure Matrix](RUNTIME_INVARIANT_FAILURE_MATRIX.md): activation-gated
+  invariant, failure-terminal, state-owner, cleanup and future-validation contract; future scenarios
+  are not current runtime coverage and require retained run artifacts.
 - [T5 local preflight STOP](G0_T5_LOCAL_PREFLIGHT_STOP.md): retained environment failure
   artifact; blocks T6/T7 on this executor but does not decide target-Linux compatibility.
 - [upstream patch provenance](../../patches/README.md): repository-owned ordered patch-series
